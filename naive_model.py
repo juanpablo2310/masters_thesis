@@ -8,9 +8,6 @@ from utils import get_maximun_number_of_annotation_in_set, train_batch_consolida
 from models import model_inputs,model_backbone,model_outputs,model_consolidation
 
 
-
-
-
 parser = argparse.ArgumentParser(description='trains the custom architecture')
 parser.add_argument('--epochs',type = int, default=1)
 parser.add_argument('--batch_size',type = int, default = 1)

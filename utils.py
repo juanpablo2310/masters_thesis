@@ -203,3 +203,83 @@ def confg_yaml(train_path:str,validation_path:str,categories:dict,config_file_na
     
     with open(f'{config_file_name}.yaml' , 'w') as config_file:
         yaml.dump(config_dict,config_file,default_flow_style=False)
+
+
+def txt_file_information_colector(filename:str)->dict:
+    '''
+    function dedicated to read the txt files that contains the annotations per images 
+    (ground/prediction) an return it as a dict
+    '''
+    image_annotations = {
+        'categories' : [],
+        'v1' : [],
+        'v2' : [],
+        'v3' : [],
+        'v4' : [],
+    }
+
+    with open(filename) as file:
+        lines = file.readlines()
+        
+        for line in lines:
+            value_list = line.split(' ')
+        
+            for key,value in zip(image_annotations.keys(),value_list):
+                image_annotations[key].append(value.replace('\n',''))
+
+    return image_annotations
+
+
+def diff_annotations(df1_o:dict,df2_o:dict)->float:
+
+    '''
+    calculates how equal de predictions and ground trues are by reading dicts with the information and comparing 
+    number of prediction and what those prediction actually are, by subtracting the predicted quantities and the 
+    ground ones, returns a float between 0 - 1 being 0 a bad score (not similar at all) and 1 (identical)
+    '''
+
+    SCORE = 0
+    df1 = df1_o.copy()
+    df2 = df2_o.copy()
+
+    diff_of_lens = abs(len(df1['categories']) - len(df2['categories']))
+
+    if diff_of_lens == 0:
+        SCORE +=1
+
+
+    ctg1 = set(df1['categories']) #.categories.astype(str).unique()
+    ctg2 = set(df2['categories']) #.categories.astype(str).unique()
+    
+
+    if len(ctg1) == len(ctg2):
+        ctg_shortest = ctg1
+        ctg_longest = ctg2
+    else:
+        ctg_shortest = ctg1 if len(ctg1) < len(ctg2) else ctg2 #get_length_assert(ctg1,ctg_min) if get_length_assert(ctg1,ctg_min) else ctg2
+        ctg_longest = ctg1 if len(ctg1) > len(ctg2) else ctg2 #ctg1 if ctg1.sort() != ctg_shortest.sort() else ctg2
+    
+    similarity_unit = 1 / len(ctg_longest)
+    # similarity_score_categories = 0
+    
+    for ctg in ctg_shortest : 
+        if ctg in ctg_longest:
+            SCORE += similarity_unit
+
+    del df1['categories'] #.drop('categories',axis = 1)
+    del df2['categories'] #.drop('categories',axis = 1)
+
+    pos_diff = []
+    for value1,value2 in zip(df1.values(),df2.values()):
+        for i,j in zip(value1,value2):
+            i,j = float(i),float(j)
+            pos_diff.append(abs(i-j))
+
+    df_diff_magnitud = sum(pos_diff)
+    max_diff_magnitud = len(pos_diff)
+    
+    diff_magnitud_normalize = df_diff_magnitud / max_diff_magnitud
+    SCORE += (1 - diff_magnitud_normalize)
+    # # print(diff_magnitud_normalize,similarity_unit,diff_of_lens,SCORE)
+
+    return SCORE/3

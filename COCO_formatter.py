@@ -7,8 +7,8 @@ import functools
 
 import os
 import datetime as dt
-
-
+import pandas as pd
+import numpy as np
 from cv2 import imread, imshow, rectangle,putText,FONT_HERSHEY_SIMPLEX
 # from google.colab.patches import cv2_imshow
 
@@ -56,7 +56,7 @@ class JsonCOCOFormatter:
                     "description": "National Herbarium DataSet",
                     "contributor": "DataLab Universidad Nacional de Colombia",
                     "url": "",
-                    "date_created": f"{dt.date.year}/{dt.date.month}/{dt.date.day}"
+                    "date_created": f"{dt.datetime.now().year}/{dt.datetime.now().month}/{dt.datetime.now().day}"
                     }
     
     def make_lincense(self):
@@ -171,7 +171,7 @@ if __name__ == '__main__':
         id_licencia += 1
         id_anotacion = 0
         # picture_path = os.path.join(os.getcwd(),'drive','MyDrive','imagenes', picture_name)#os.path.join(os.getcwd(),'data','imagenes', picture_name)
-        picture_path = os.path.abspath(picture_name)
+        picture_path = os.path.abspath(os.path.join('data','imagenes',picture_name))
         single_photo_data = functools.partial(JsonCOCOFormatter,images=imagenes,licenses=licensias,annotations=anotaciones,categories=categorias,file_name=picture_path,height=sub_table.height.unique()[0],width=sub_table.width.unique()[0],id_lincense = id_licencia, id_photo = id_picture)
         for i,row in sub_table.iterrows():
             id_anotacion += 1
