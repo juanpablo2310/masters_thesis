@@ -10,7 +10,7 @@ def monochromaticIntensityHistogram(path : str,save:bool = False,show:bool = Fal
     imageList = os.listdir(path)
     savePath = get_project_results(f'images/histograms/monochromatic/')
     os.makedirs(savePath,exist_ok=True)
-    for image in imageList[:5]:
+    for image in imageList:
         im = cv2.imread(os.path.join(path,image))
         vals = im.mean(axis=2).flatten()
         counts, bins = np.histogram(vals, range(257))
@@ -31,7 +31,7 @@ def RGBhitogram(path:str, save:bool =False, show :bool = False):
     savePath = get_project_results(f'images/histograms/RGB/')
     os.makedirs(savePath,exist_ok=True)
     dict_results = {}
-    for img_n in imageList[:5]:
+    for img_n in imageList:
         img = cv2.imread(os.path.join(path,img_n))
         color = ('b','g','r')
         for i,col in enumerate(color):
@@ -50,3 +50,10 @@ def RGBhitogram(path:str, save:bool =False, show :bool = False):
         if show:
             plt.show()
 
+def graphMetricHistory(history_epoch:list,metric:str,legend:list[dict])->None:#values_x:list,values_y:list
+    fig, ax = plt.subplots(figsize=(5, 5), layout='constrained')
+    for i,label in enumerate(history_epoch):
+        print([x['name'] for x in legend if x['id'] == i][0])
+        ax.plot(label[0], label[1],label = [x['name'] for x in legend if x['id'] == i][0])
+    ax.set_title(metric)
+    ax.legend(loc = 'lower right')

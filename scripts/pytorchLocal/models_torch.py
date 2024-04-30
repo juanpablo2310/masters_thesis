@@ -100,6 +100,60 @@ def outputPreparation(output:Iterable,tensorCategoryTargets:torch.Tensor,tensorB
     return bboxOutputsTargets,labelsOutputsTargets
 
 
+def calculate_iou(box1:Iterable, box2:Iterable)->float:
+    """
+    Calculates the IoU (Intersection over Union) between two bounding boxes.
+    
+    Arguments:
+    box1 -- list or tuple containing [x1, y1, x2, y2] coordinates of the first bounding box
+    box2 -- list or tuple containing [x1, y1, x2, y2] coordinates of the second bounding box
+    
+    Returns:
+    iou -- float value representing the IoU between the two bounding boxes
+    """
+    # calculate the area of each bounding box
+    area_box1 = (box1[2] - box1[0]) * (box1[3] - box1[1])
+    area_box2 = (box2[2] - box2[0]) * (box2[3] - box2[1])
+    
+    # calculate the coordinates of the intersection rectangle
+    x1 = max(box1[0], box2[0])
+    y1 = max(box1[1], box2[1])
+    x2 = min(box1[2], box2[2])
+    y2 = min(box1[3], box2[3])
+    
+    # calculate the area of the intersection rectangle
+    intersection_area = max(0, x2 - x1) * max(0, y2 - y1)
+    
+    # calculate the union of the two bounding boxes
+    union_area = area_box1 + area_box2 - intersection_area
+    
+    # calculate the IoU
+    iou = intersection_area / union_area
+    
+    return iou
+
+def calculateTotalIOU(network:Callable,totallabes:int, data_loader:Iterable, device:str)->tuple[float,float]:
+    #bboxOutputsTargets.append((bboxOutput,tensorBboxTargets))
+    network.eval()
+    totalIOU = []
+ 
+    with torch.no_grad():
+        for data, target in data_loader:
+            tensorBboxTargets ,tensorCategoryTargets = targetPreparation(target=target,totallabes=totallabes,device=device)
+            
+            data = data.to(torch.float32).to(device)
+            network = network.to(torch.float32).to(device)
+            output = network(data) #float())
+            
+            bboxOutputsTargets,_ = outputPreparation(output,tensorCategoryTargets,tensorBboxTargets)
+            for bboxOutput,bboxTarget in zip(*bboxOutputsTargets):
+                iou = calculate_iou(bboxOutput,bboxTarget)
+                totalIOU.append(iou)
+            
+    return totalIOU
+
+
+
 def bboxLossfn(output:Sequence[any],target:Sequence[any])->float:
     return 1 - (output * target).sum() / (output + target - output * target).sum() #criterion(bboxOutput.long(), tensorBboxTargets.long())
         
@@ -158,6 +212,7 @@ def test(network:Callable,totallabes:int, data_loader:Iterable, criterion:Callab
     with torch.no_grad():
         for data, target in data_loader:
             tensorBboxTargets ,tensorCategoryTargets = targetPreparation(target=target,totallabes=totallabes,device=device)
+            
             data = data.to(torch.float32).to(device)
             network = network.to(torch.float32).to(device)
             output = network(data) #float())

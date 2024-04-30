@@ -20,7 +20,7 @@ from torchvision.transforms import Resize,Compose,Normalize
 from utils_torch import get_maximum_number_of_annotation_in_set,read_data,\
     CustomCocoDetection,custom_collate_fn,saveModel
 
-from models_torch import ModelFromScratch,train,test
+from models_torch import ModelFromScratch,train,test,calculate_confusion_matrix,calculateTotalIOU
 from scripts.utils.paths import get_project_annotations,get_project_data_MELU_dir,get_project_data_UN_dir,get_project_models,get_project_configs
 
 parser = argparse.ArgumentParser(description='trains the custom architecture')
@@ -71,23 +71,48 @@ train_loss_history_bbox = []
 train_loss_history_lbs = []
 test_loss_history = []
 test_accuracy_history = []
+confusion_matrix_history = []
+presicion_history = []
+recall_history = []
+F1_score_history = []
+iou_history = []
+
  
 for epoch in tqdm(range(num_epochs), total=num_epochs):
 
     train_loss_avg,train_loss_bbox,train_loss_lbs = train(BasicModel,num_classes, data_loader, criterion, optimizer, args.device)
     test_loss, test_accuracy = test(BasicModel,num_classes, data_loader, criterion, args.device)
+    cm = calculate_confusion_matrix(BasicModel,data_loader,num_classes,args.device)
+    iou = calculateTotalIOU(BasicModel,num_classes, data_loader, args.device)
+    tn, fp, fn, tp = cm.ravel()
+    presicion = tp / (tp + fp)
+    recall = tp / (tp + fn)
+    F1_score = 2 * (presicion * recall / presicion + recall)
+
 
     train_loss_history_avg.append(train_loss_avg)
     train_loss_history_bbox.append([x.item() for x in train_loss_bbox])
     train_loss_history_lbs.append([x.item() for x in train_loss_lbs])
     test_loss_history.append(test_loss)
     test_accuracy_history.append(test_accuracy)
+    confusion_matrix_history.append(cm)
+    presicion_history.append(presicion)
+    recall_history.append(recall)
+    F1_score_history.append(F1_score)
+    iou_history.append(iou)
+
+
 
 
 results = {
 'train_loss_history': {'average_loss':train_loss_history_avg,'loss_bbox_per_class':train_loss_history_bbox,'loss_class_per_class':train_loss_history_lbs},
-    'test_loss_history': test_loss_history,
-    'test_accuracy_history': test_accuracy_history
+'test_loss_history': test_loss_history,
+'test_accuracy_history': test_accuracy_history,
+'Intersection_over_union' : iou_history,
+'confusion_matrix' : confusion_matrix_history,
+'presicion' : presicion_history,
+'recall': recall_history,
+'F1 Score': F1_score_history,
 }
 
 print(results)

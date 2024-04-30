@@ -303,10 +303,10 @@ def bbox_de_COCO_format(bbox:list[float])->list[float]:
 
 def saveModel(model:tf.Tensor,save_path:str,results:dict[str,any] = None)->None:
 
-    model.save(model, save_path)#os.path.join(save_path, args.save_model))
+    model.save(save_path)#os.path.join(save_path, args.save_model))
     
     if results :
         with open(f'{save_path[:-4]}_results.json', 'wb') as f:
-            dump(results, f)
+            json.dump(results, f)
 
     print(f"Model saved to {save_path}")
