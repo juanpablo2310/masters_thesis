@@ -85,7 +85,7 @@ def get_maximun_number_of_annotation_in_set(annotations:list[dict[str,str]],imag
     max_boxes_per_id = max(max_count_annotation_id_per_image)
     return max_boxes_per_id
 
-def train_batch_consolidation(train_x_inputs:list[dict[str,str]],x_samples:list[any],tran_y_inputs:list[dict[str,str]],y_samples:list[any],max_boxes:int,IMG_SHAPE:tuple[int])->list[np.array,dict]:
+def train_batch_consolidation(train_x_inputs:list[dict[str,str]],x_samples:list[any],tran_y_inputs:list[dict[str,str]],y_samples:list[any],max_boxes:int,IMG_SHAPE:tuple[int],num_clases:int)->list[np.array,dict]:
     '''
     This function takes the list of features and parameters for the neural network and compiles them into suitable stack of dicts
     and tensors that are consume by the model
@@ -103,7 +103,7 @@ def train_batch_consolidation(train_x_inputs:list[dict[str,str]],x_samples:list[
     for individual_image in train_x_inputs:
         # ann_per_image = []
         total_targets_per_image = {}
-        potential_labels = [x for x in range(6)]
+        potential_labels = [x for x in range(num_clases)]
         pl = potential_labels.copy()
         image_processed = process_image(individual_image,IMG_SHAPE)
         x_samples.append(image_processed)
@@ -306,7 +306,7 @@ def saveModel(model:tf.Tensor,save_path:str,results:dict[str,any] = None)->None:
     model.save(save_path)#os.path.join(save_path, args.save_model))
     
     if results :
-        with open(f'{save_path[:-4]}_results.json', 'wb') as f:
+        with open(f'{save_path[:-4]}_results.json', 'w') as f:
             json.dump(results, f)
 
     print(f"Model saved to {save_path}")

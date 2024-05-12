@@ -56,4 +56,4 @@ def graphMetricHistory(history_epoch:list,metric:str,legend:list[dict])->None:#v
         print([x['name'] for x in legend if x['id'] == i][0])
         ax.plot(label[0], label[1],label = [x['name'] for x in legend if x['id'] == i][0])
     ax.set_title(metric)
-    ax.legend(loc = 'lower right')
+    ax.legend(loc = 'best')

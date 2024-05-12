@@ -7,7 +7,7 @@ from pickle import dump
 import yaml
 from tqdm import tqdm
 from cv2 import imread
-from typing import List,Dict,Callable,Iterable,Tuple,Union
+from typing import List,Dict,Callable,Iterable,Tuple,Union,Any
 from torchvision.datasets.coco import CocoDetection
 
 import torch
@@ -16,21 +16,33 @@ import pdb
 
 
 class CustomCocoDetection(CocoDetection):
+    
     def __init__(self, root, annFile, transform=None):
         super().__init__(root, annFile, transform=transform)
 
-    def __getitem__(self, index):
-        img, target = super().__getitem__(index)
-        if self.transform is not None:
-            img = self.transform(img)
+    def _load_target(self, id: int) -> List[Any]:
+            return self.coco.imgToAnns[id]
 
-        return img, target
+    def __getitem__(self, index: int) -> Tuple[Any, Any]:
+            image, target = super().__getitem__(index)
+            if self.transforms is not None:
+                image, target = self.transforms(image, target)
+            return image, target
+
+
+
+def normalize_image(matrix):
+    norm = np.linalg.norm(matrix)
+    matrix = matrix/norm  
+    return matrix
+ 
 
 def custom_collate_fn(batch):
     images = []
     targets = []
     for img, target in batch:
-        images.append(torch.from_numpy(np.array(img))) #normalizacion de la imagen 
+        img_normalize = normalize_image(np.array(img))
+        images.append(torch.from_numpy(img_normalize)) 
         targets.append(target)
     images = torch.stack(images, dim=0)
     return images, targets
@@ -39,6 +51,7 @@ def calculate_mean_std_per_channel(image_folder:str)->List[float]:
     
     all_means = []
     all_stds = []
+
     for file in os.listdir(image_folder):
         if file.endswith('.png'):
             image = imread(os.path.join(image_folder,file))
@@ -205,10 +218,10 @@ def diff_annotations(df1_o:dict,df2_o:dict)->float:
 
 def saveModel(model:torch.nn.Module,save_path:str,results:Dict[str,any] = None)->None:
 
-    torch.save(model.state_dict(), save_path)#os.path.join(save_path, args.save_model))
+    torch.save(model.state_dict(), save_path) #os.path.join(save_path, args.save_model))
     
     if results :
-        with open(f'{save_path[:-4]}_results.json', 'wb') as f:
-            dump(results, f)
+        with open(f'{save_path[:-4]}_results.json', 'w') as f:
+            json.dump(results, f)
 
     print(f"Model saved to {save_path}")

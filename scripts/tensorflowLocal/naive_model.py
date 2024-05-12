@@ -14,13 +14,15 @@ from utils_tensorflow import get_maximun_number_of_annotation_in_set, train_batc
 from models import model_inputs,model_backbone,model_outputs,model_consolidation
 from scripts.utils.paths import get_project_models,get_project_configs,get_project_annotations
 
+from PIL import ImageFile
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 parser = argparse.ArgumentParser(description='trains the custom architecture')
-parser.add_argument('--epochs',type = int, default=1)
-parser.add_argument('--batch_size',type = int, default = 1)
-parser.add_argument('--model_structure',type = str, default = os.path.join(get_project_configs,'json','default_config.json'))
+parser.add_argument('--epochs',type = int, default=5)
+parser.add_argument('--batch_size',type = int, default = 10)
+parser.add_argument('--model_structure',type = str, default = get_project_configs('json/default_config.json'))
 parser.add_argument('--save_model',type = str,default = 'model_CNN_tensorflow.keras')
-parser.add_argument('--device',type=str,default='mps')
+parser.add_argument('--device',type=str,default='cpu')
 parser.add_argument('--learning_rate',type = float, default = 0.001)
 parser.add_argument('--trainSet',choices=['UN','MELU'],default = 'UN')
 args = parser.parse_args()
@@ -56,7 +58,8 @@ images_for_training , training_targets = train_batch_consolidation(
                                                                 annotations,
                                                                 total_training_targets,
                                                                 max_n_boxes,
-                                                                IMG_SHAPE
+                                                                IMG_SHAPE,
+                                                                num_classes
                                                                 )
 
 normalization_value = np.max([x[0][0] for x in images_for_training])

@@ -16,11 +16,12 @@ from torch import nn,optim
 from torchinfo import summary
 from torch.utils.data import  DataLoader
 from torchvision.transforms import Resize,Compose,Normalize
+import pdb
 
 from utils_torch import get_maximum_number_of_annotation_in_set,read_data,\
     CustomCocoDetection,custom_collate_fn,saveModel
 
-from models_torch import ModelFromScratch,train,test,calculate_confusion_matrix,calculateTotalIOU
+from models_torch import ModelFromScratch,train,test,metricsTotalPerClass,calculateTotalIOU,calculate_metrics
 from scripts.utils.paths import get_project_annotations,get_project_data_MELU_dir,get_project_data_UN_dir,get_project_models,get_project_configs
 
 parser = argparse.ArgumentParser(description='trains the custom architecture')
@@ -72,9 +73,9 @@ train_loss_history_lbs = []
 test_loss_history = []
 test_accuracy_history = []
 confusion_matrix_history = []
-presicion_history = []
-recall_history = []
-F1_score_history = []
+presicion_history =  {i:list() for i in range(num_classes)}
+recall_history = {i:list() for i in range(num_classes)}
+F1_score_history = {i:list() for i in range(num_classes)}
 iou_history = []
 
  
@@ -82,25 +83,23 @@ for epoch in tqdm(range(num_epochs), total=num_epochs):
 
     train_loss_avg,train_loss_bbox,train_loss_lbs = train(BasicModel,num_classes, data_loader, criterion, optimizer, args.device)
     test_loss, test_accuracy = test(BasicModel,num_classes, data_loader, criterion, args.device)
-    cm = calculate_confusion_matrix(BasicModel,data_loader,num_classes,args.device)
+    dict_metric_per_epoch = metricsTotalPerClass(BasicModel,data_loader,num_classes,args.device)
     iou = calculateTotalIOU(BasicModel,num_classes, data_loader, args.device)
-    tn, fp, fn, tp = cm.ravel()
-    presicion = tp / (tp + fp)
-    recall = tp / (tp + fn)
-    F1_score = 2 * (presicion * recall / presicion + recall)
-
+    #precision, recall, F1_score = calculate_metrics(cm)
+    
+  
 
     train_loss_history_avg.append(train_loss_avg)
     train_loss_history_bbox.append([x.item() for x in train_loss_bbox])
     train_loss_history_lbs.append([x.item() for x in train_loss_lbs])
     test_loss_history.append(test_loss)
     test_accuracy_history.append(test_accuracy)
-    confusion_matrix_history.append(cm)
-    presicion_history.append(presicion)
-    recall_history.append(recall)
-    F1_score_history.append(F1_score)
     iou_history.append(iou)
 
+for key in dict_metric_per_epoch:
+    presicion_history[key].extend(dict_metric_per_epoch[key]['precision'])
+    recall_history[key].extend(dict_metric_per_epoch[key]['recall'])
+    F1_score_history[key].extend(dict_metric_per_epoch[key]['F1_score'])    
 
 
 
@@ -109,7 +108,6 @@ results = {
 'test_loss_history': test_loss_history,
 'test_accuracy_history': test_accuracy_history,
 'Intersection_over_union' : iou_history,
-'confusion_matrix' : confusion_matrix_history,
 'presicion' : presicion_history,
 'recall': recall_history,
 'F1 Score': F1_score_history,
@@ -122,7 +120,7 @@ print(results)
 if args.save_model:
     if not os.path.exists(SAVE_PATH):
         os.makedirs(SAVE_PATH)
-    fileSaved = os.path.join(SAVE_PATH, f'{args.epochs}_{args.batch_size}_{args.learning_rate}_{args.trainSet}_{args.save_model}.pt')
+    fileSaved = os.path.join(SAVE_PATH, f'{args.epochs}_{args.batch_size}_{args.learning_rate}_{args.trainSet}_{args.save_model}')
     saveModel(BasicModel,fileSaved,results)
    
     

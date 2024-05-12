@@ -4,7 +4,8 @@ import numpy as np
 from sklearn.metrics import confusion_matrix
 from typing import Iterable,Callable,List,Dict,Sequence,Union
 from torch.nn import functional as F
-
+import pdb
+from utils_torch import dict_load
 def pad_tensors_to_same_size(tensor1, tensor2):
     diff = tensor1.numel() - tensor2.numel()
     if diff > 0:
@@ -99,6 +100,13 @@ def outputPreparation(output:Iterable,tensorCategoryTargets:torch.Tensor,tensorB
         labelsOutputsTargets.append((labelsOutput,tensorCategoryTargets))
     return bboxOutputsTargets,labelsOutputsTargets
 
+def bbox_de_COCO_format_Tensor(bbox:torch.Tensor)->list[float]:
+    x_min = bbox[0] - (0.5 * bbox[2])
+    y_min = bbox[1] - (0.5 * bbox[3])
+    x_max = x_min + bbox[2]
+    y_max = y_min + bbox[3]
+    return [x_min.item(),y_min.item(),x_max.item(),y_max.item()]
+
 
 def calculate_iou(box1:Iterable, box2:Iterable)->float:
     """
@@ -111,25 +119,26 @@ def calculate_iou(box1:Iterable, box2:Iterable)->float:
     Returns:
     iou -- float value representing the IoU between the two bounding boxes
     """
-    # calculate the area of each bounding box
+  
+    box1 = bbox_de_COCO_format_Tensor(bbox=box1)
+    box2 = bbox_de_COCO_format_Tensor(bbox=box2)
     area_box1 = (box1[2] - box1[0]) * (box1[3] - box1[1])
     area_box2 = (box2[2] - box2[0]) * (box2[3] - box2[1])
-    
-    # calculate the coordinates of the intersection rectangle
+
+    if (area_box1 == 0) | (area_box2 == 0):
+        return 0
+
     x1 = max(box1[0], box2[0])
     y1 = max(box1[1], box2[1])
     x2 = min(box1[2], box2[2])
     y2 = min(box1[3], box2[3])
     
-    # calculate the area of the intersection rectangle
     intersection_area = max(0, x2 - x1) * max(0, y2 - y1)
     
-    # calculate the union of the two bounding boxes
     union_area = area_box1 + area_box2 - intersection_area
     
-    # calculate the IoU
     iou = intersection_area / union_area
-    
+   
     return iou
 
 def calculateTotalIOU(network:Callable,totallabes:int, data_loader:Iterable, device:str)->tuple[float,float]:
@@ -146,9 +155,14 @@ def calculateTotalIOU(network:Callable,totallabes:int, data_loader:Iterable, dev
             output = network(data) #float())
             
             bboxOutputsTargets,_ = outputPreparation(output,tensorCategoryTargets,tensorBboxTargets)
-            for bboxOutput,bboxTarget in zip(*bboxOutputsTargets):
-                iou = calculate_iou(bboxOutput,bboxTarget)
-                totalIOU.append(iou)
+            bboxOutputs , tensorBboxTargets = zip(*bboxOutputsTargets)
+            for bboxOutput,bboxTarget in zip(bboxOutputs,tensorBboxTargets):
+                assert bboxOutput.shape == bboxTarget.shape
+                for bbox_ind in range(0,bboxTarget.shape[0],4):
+                    singleOutputBox = bboxOutput[bbox_ind:bbox_ind+4]
+                    singleTargetBox = bboxTarget[bbox_ind:bbox_ind+4]
+                    iou = calculate_iou(singleOutputBox,singleTargetBox)
+                    totalIOU.append(iou)
             
     return totalIOU
 
@@ -158,6 +172,7 @@ def bboxLossfn(output:Sequence[any],target:Sequence[any])->float:
     return 1 - (output * target).sum() / (output + target - output * target).sum() #criterion(bboxOutput.long(), tensorBboxTargets.long())
         
 def calculateLoss(bboxOutputsTargets:Sequence[tuple],labelsOutputsTargets:Sequence[tuple],criterionLabels:Callable,correctCtg:int = 0,criterionBox:Callable = bboxLossfn)->tuple[Sequence[any],Sequence[any],int]:
+   
     labelsOutputs, tensorCategoryTargets = zip(*labelsOutputsTargets)
     bboxOutputs , tensorBboxTargets = zip(*bboxOutputsTargets)
     lossLabelsPerCategory = []
@@ -228,40 +243,74 @@ def test(network:Callable,totallabes:int, data_loader:Iterable, criterion:Callab
   
     return test_loss / len(data_loader.dataset), 100 * correctCtg / total
 
+def labelsOutputsDiscretization(labels:list,total_classes:int)->list:
+    
+    whole_ctg = []
+  
+    for single_ctg in labels:
+        total_discretization_per_ctg = []
+        for i in range(0,len(single_ctg),total_classes):
+            
+            outputImage = single_ctg[i:i+total_classes]
+        
+            outputImageDiscrete = np.zeros(total_classes).tolist()
+            indentifyCategory = np.argmax(outputImage)
+            outputImageDiscrete[indentifyCategory] = 1.0
+            
+            total_discretization_per_ctg.extend(outputImageDiscrete)
+        
+        whole_ctg.append(torch.Tensor(total_discretization_per_ctg))
+    return whole_ctg
 
+def metricsTotalPerClass(model:Callable, data_loader:Iterable,totallabes:int, device:str)->np.ndarray:
 
-def calculate_confusion_matrix(model:Callable, data_loader:Iterable,totallabes:int, device:str)->np.ndarray:
-    all_labels = []
-    all_predictions = []
     model.eval()
-
+    total_metrics_per_class = {i:dict() for i in range(totallabes)}
     with torch.no_grad():
         for images, labels in data_loader:
             # Forward pass
-            _ ,tensorCategoryTargets = targetPreparation(target=labels,totallabes=totallabes,device=device)
+            tensorBboxTargets ,tensorCategoryTargets = targetPreparation(target=labels,totallabes=totallabes,device=device)
             images = images.to(torch.float32).to(device)
-            bbox_preds, class_preds = model(images)
+            output = model(images)
+            _,labelsOutputsTargets = outputPreparation(output,tensorCategoryTargets,tensorBboxTargets)
+            labelsOutputs, tensorCategoryTargets = zip(*labelsOutputsTargets)
+            labelsOutputsDiscrete = labelsOutputsDiscretization(labelsOutputs,total_classes=totallabes)
+            class_preds_np = [class_pred.cpu().numpy() for class_pred in labelsOutputsDiscrete]
+            labels_np =   [lbels.cpu().numpy() for lbels in tensorCategoryTargets] #tensorCategoryTargets.cpu().numpy()
+    
 
-            # Convert predictions to numpy arrays
-            bbox_preds_np = [bbox_pred.cpu().numpy() for bbox_pred in bbox_preds]
-            class_preds_np = [class_pred.cpu().numpy() for class_pred in class_preds]
-            labels_np = tensorCategoryTargets.cpu().numpy()
+            for dict_categ,ctg_target, ctg_preds in zip(total_metrics_per_class.values(),labels_np, class_preds_np):
+                
+                assert len(ctg_target) == len(ctg_preds)
+                for img_lenght in range(0,len(ctg_target),totallabes):
+                    presicion, recall, F1_score   = calculate_metrics(confusion_matrix(ctg_target[img_lenght:img_lenght+totallabes],ctg_preds[img_lenght:img_lenght+totallabes]) , totallabes)
+             
+                    dict_load(dict_categ,presicion,'precision')
+                    dict_load(dict_categ,recall,'recall')
+                    dict_load(dict_categ,F1_score,'F1_score')
+      
+    for dict_ctg in total_metrics_per_class.values():
+        for key in dict_ctg.keys():
+            dict_ctg[key] = [np.mean(dict_ctg[key])]
 
-            # Reshape predictions
-            bbox_preds_np = np.concatenate(bbox_preds_np, axis=1)
-            class_preds_np = np.concatenate(class_preds_np, axis=1)
+    return total_metrics_per_class #confusion_matrix(all_labels, all_predictions) #confusion_mat
 
-            # Get predicted class
-            predicted_class = np.argmax(class_preds_np, axis=1)
+def calculate_metrics(cm:np.ndarray,total_ctg:int)->list:  #https://en.wikipedia.org/wiki/Precision_and_recall
+    p  = 1
+    n = total_ctg - p 
+    r_ = n/p
+    tn, fp, fn, tp = cm.ravel()
+    tpr = tp / p
+    tnr = tn / n
+    fpr = fp / n 
 
-            # Append to lists
-            all_labels.extend(labels_np)
-            all_predictions.extend(predicted_class)
 
-    # Calculate confusion matrix
-    confusion_mat = confusion_matrix(all_labels, all_predictions)
+    presicion = tpr / (tpr + (r_ * fpr)) #tp / (tp + fp)
+    recall = tpr
+    F1_score = 0 if presicion == recall == 0 else 2 * (presicion * recall / presicion + recall) 
 
-    return confusion_mat
+    return presicion, recall, F1_score    
+
 
 
 class ModelFromScratch(nn.Module):
