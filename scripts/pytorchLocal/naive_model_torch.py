@@ -96,10 +96,10 @@ for epoch in tqdm(range(num_epochs), total=num_epochs):
     test_accuracy_history.append(test_accuracy)
     iou_history.append(iou)
 
-for key in dict_metric_per_epoch:
-    presicion_history[key].extend(dict_metric_per_epoch[key]['precision'])
-    recall_history[key].extend(dict_metric_per_epoch[key]['recall'])
-    F1_score_history[key].extend(dict_metric_per_epoch[key]['F1_score'])    
+    for key in dict_metric_per_epoch:
+        presicion_history[key].extend(dict_metric_per_epoch[key]['precision'])
+        recall_history[key].extend(dict_metric_per_epoch[key]['recall'])
+        F1_score_history[key].extend(dict_metric_per_epoch[key]['F1_score'])    
 
 
 

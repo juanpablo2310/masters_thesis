@@ -164,7 +164,7 @@ def calculateTotalIOU(network:Callable,totallabes:int, data_loader:Iterable, dev
                     iou = calculate_iou(singleOutputBox,singleTargetBox)
                     totalIOU.append(iou)
             
-    return totalIOU
+    return np.mean(totalIOU)
 
 
 
