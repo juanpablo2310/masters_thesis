@@ -99,7 +99,7 @@ def bbox_de_COCO_format(bbox:list)->list[float]:
     return [x_min,y_min,x_max,y_max]   
 
 def normalize_image(image, mean, std):
-    image = np.ndarray(image)
+    image = np.asarray(image)
     image = torch.from_numpy(image).to(device=device, dtype=torch.float32).view(-1, 1, 1) #torch.tensor(image).view(-1, 1, 1)
     mean = torch.tensor(mean).view(-1, 1, 1)
     std = torch.tensor(std).view(-1, 1, 1)
