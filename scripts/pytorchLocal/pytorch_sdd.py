@@ -6,6 +6,10 @@ import torchvision.models.detection
 
 from torchvision.models.detection import FasterRCNN,FasterRCNN_ResNet50_FPN_Weights,FasterRCNN_MobileNet_V3_Large_FPN_Weights
 from torchvision.models.detection.rpn import AnchorGenerator
+from torchvision.ops import box_iou
+
+from pycocotools.coco import COCO
+from pycocotools.cocoeval import COCOeval
 
 from tqdm import tqdm
 import os
@@ -58,6 +62,35 @@ class CustomBoxPredictor(nn.Module):
         return scores, bbox_deltas
 
 
+def calculate_precision_recall_f1(targets, preds, iou_threshold=0.5):
+    tp, fp, fn = 0, 0, 0
+
+    for target, pred in zip(targets, preds):
+        iou = calculate_iou(target, pred)
+        tp += (iou > iou_threshold).sum().item()
+        fp += (iou <= iou_threshold).sum().item()
+        fn += len(target) - (iou > iou_threshold).sum().item()
+
+    precision = tp / (tp + fp) if (tp + fp) > 0 else 0
+    recall = tp / (tp + fn) if (tp + fn) > 0 else 0
+    f1_score = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
+
+    return precision, recall, f1_score
+
+def calculate_map(coco_gt, coco_dt):
+    coco_eval = COCOeval(coco_gt, coco_dt, 'bbox')
+    coco_eval.evaluate()
+    coco_eval.accumulate()
+    coco_eval.summarize()
+    mAP = coco_eval.stats[0]
+    return mAP
+
+
+def calculate_iou(target_boxes, pred_boxes):
+    iou = box_iou(target_boxes, pred_boxes)
+    return iou
+
+
 def labelVec(label:int,num_classes:int)->torch.tensor:
     classVec = torch.zeros(num_classes,dtype = torch.int64)
     classVec[label] = 1
@@ -105,12 +138,33 @@ for epoch in tqdm(range(num_epochs),total = num_epochs):
     
         loss_dict = model(images.to(torch.float32), targets)
         
-        loss_per_epoch.append(loss_dict)
+        
         losses = sum(loss for loss in loss_dict.values())
         optimizer.zero_grad() 
         losses.backward()
         optimizer.step()
     lr_scheduler.step()
+    
+    model.eval()
+    with torch.no_grad():
+        all_targets, all_preds = [], []
+        for images, targets in data_loader:
+            outputs = model(images)
+            all_targets.extend(targets)
+            all_preds.extend(outputs)
+
+        iou = calculate_iou(all_targets, all_preds)
+        precision, recall, f1_score = calculate_precision_recall_f1(all_targets, all_preds)
+        # # If using COCO format
+        # mAP = calculate_map(coco_gt, coco_dt)
+
+        print(f'Epoch {epoch}: IoU {iou.mean()}, Precision {precision}, Recall {recall}, F1 Score {f1_score}') # mAP {mAP}'
+    loss_dict['epoch'] = epoch
+    loss_dict['iou'] = iou.mean()
+    loss_dict['precision'] = precision
+    loss_dict['recall'] = recall
+    loss_dict['f1Score'] = f1_score
+    loss_per_epoch.append(loss_dict)
 
 if args.save_model:
     os.makedirs(SAVE_PATH,exist_ok=True)
