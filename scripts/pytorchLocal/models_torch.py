@@ -70,7 +70,8 @@ def targetPreparation(target:Iterable,totallabes:int, device:str)->tuple[Sequenc
 
         for x in target_batch:
             # x_bbox = sigmoid(np.array(x['bbox']))
-            list_batch_bbox.append(x['bbox'])
+            bbox_deformated = bbox_de_COCO_format_Tensor(torch.FloatTensor(x['bbox']))
+            list_batch_bbox.append(bbox_deformated)
             list_batch_category.append(x['category_id'])
 
         listBatchCategoryVec = vectorCategoria(list_batch_category,totallabes)
@@ -93,9 +94,10 @@ def outputPreparation(output:Iterable,tensorCategoryTargets:torch.Tensor,tensorB
     labelsOutputsTargets = []
     for ctg in range(len(output[1])):
         bboxOutput = output[0][ctg].view(-1)  
+        bboxOutput = bbox_de_COCO_format_Tensor(torch.FloatTensor(bboxOutput))
         labelsOutput = output[1][ctg].view(-1)
-        labelsOutput , tensorCategoryTargets = pad_tensors_to_same_size(labelsOutput,tensorCategoryTargets)
-        bboxOutput , tensorBboxTargets = pad_tensors_to_same_size(bboxOutput,tensorBboxTargets)
+        labelsOutput , tensorCategoryTargets = pad_tensors_to_same_size(torch.FloatTensor(labelsOutput),torch.FloatTensor(tensorCategoryTargets))
+        bboxOutput , tensorBboxTargets = pad_tensors_to_same_size(torch.FloatTensor(bboxOutput),torch.FloatTensor(tensorBboxTargets))
         bboxOutputsTargets.append((bboxOutput,tensorBboxTargets))
         labelsOutputsTargets.append((labelsOutput,tensorCategoryTargets))
     return bboxOutputsTargets,labelsOutputsTargets
