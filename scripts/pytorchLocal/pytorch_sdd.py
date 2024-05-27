@@ -15,20 +15,14 @@ from tqdm import tqdm
 import os
 import pdb
 import sys
-print(os.path.dirname(os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))))
+# print(os.path.dirname(os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))))
 sys.path.append(os.path.dirname(os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))))
     
-from utils_torch import CustomCocoDetection,custom_collate_fn,saveModel,read_data
-from torchvision.transforms import Resize,Compose
+from utils_torch import CustomCocoDetection,custom_collate_fn,saveModel,read_data,calculate_mean_std_per_channel
+from torchvision.transforms import Resize,Compose, ToTensor,Lambda
 from torch.utils.data import  DataLoader 
 from scripts.utils.paths import  get_project_annotations,get_project_data_MELU_dir,get_project_data_UN_dir,get_project_models
 import argparse
-
-IMG_SHAPE = (500, 500) 
-
-TRANSFORMS = Compose([
-    Resize(IMG_SHAPE)
-    ])
 
 parser = argparse.ArgumentParser(description='trains the RestNet50 architecture')
 parser.add_argument('--epochs',type = int, default=5)
@@ -102,23 +96,34 @@ def bbox_de_COCO_format(bbox:list)->list[float]:
     y_min = bbox[1] - (0.5 * bbox[3])
     x_max = x_min + bbox[2]
     y_max = y_min + bbox[3]
-    return [x_min,y_min,x_max,y_max]    
+    return [x_min,y_min,x_max,y_max]   
+
+def normalize_image(image, mean, std):
+    image = torch.tensor(image).view(-1, 1, 1)
+    mean = torch.tensor(mean).view(-1, 1, 1)
+    std = torch.tensor(std).view(-1, 1, 1)
+    return (image - mean) / std 
+
+MEAN_VAL, STD_VAL = calculate_mean_std_per_channel(IMAGES_FOLDER)
+IMG_SHAPE = (500, 500) 
+
+TRANSFORMS = Compose([
+    Resize(IMG_SHAPE),
+    #ToTensor(),
+    Lambda(lambda x : normalize_image(x,MEAN_VAL,STD_VAL))    
+    ])
 
 
 _,_,_,num_classes = read_data(COCO_ANNOTATION_FILE)
 
 
 coco_dataset = CustomCocoDetection(IMAGES_FOLDER,COCO_ANNOTATION_FILE,transform=TRANSFORMS)
-
 data_loader = DataLoader(coco_dataset, batch_size=32, shuffle=True,collate_fn = custom_collate_fn )  
 
 model = torchvision.models.detection.fasterrcnn_mobilenet_v3_large_fpn(weights=FasterRCNN_MobileNet_V3_Large_FPN_Weights.DEFAULT)
 model = model.to(torch.float32) #float()
-
-
 backbone_out_channels = 1024  
 model.roi_heads.box_predictor = CustomBoxPredictor(backbone_out_channels, num_classes + 1)
-
 
 device = args.device 
 model = model.to(device)
@@ -133,23 +138,19 @@ loss_per_epoch = []
 for epoch in tqdm(range(num_epochs),total = num_epochs):
     for images, targets in data_loader:
         images = torch.stack(list(image.permute(2,0,1).to(device) for image in images)) 
-  
         targets = [{k.replace('bbox', 'boxes').replace('category_id','labels'): torch.tensor(bbox_de_COCO_format(v)).unsqueeze(0).to(torch.float32).to(device) if k == 'bbox' else labelVec(int(v),num_classes).to(device) for k, v in t.items() if k in ['bbox','category_id']} for ann in targets for t in ann] #torch.tensor(v).to(torch.int64)
-    
         loss_dict = model(images.to(torch.float32), targets)
-        
-        
         losses = sum(loss for loss in loss_dict.values())
         optimizer.zero_grad() 
         losses.backward()
         optimizer.step()
     lr_scheduler.step()
-    
     model.eval()
     with torch.no_grad():
         all_targets, all_preds = [], []
         for images, targets in data_loader:
-            outputs = model(images)
+            targets = [{k.replace('bbox', 'boxes').replace('category_id','labels'): torch.tensor(bbox_de_COCO_format(v)).unsqueeze(0).to(torch.float32).to(device) if k == 'bbox' else labelVec(int(v),num_classes).to(device) for k, v in t.items() if k in ['bbox','category_id']} for ann in targets for t in ann]
+            outputs = model(images.to(torch.float32))
             all_targets.extend(targets)
             all_preds.extend(outputs)
 
@@ -169,7 +170,7 @@ for epoch in tqdm(range(num_epochs),total = num_epochs):
 if args.save_model:
     os.makedirs(SAVE_PATH,exist_ok=True)
     fileSaved = os.path.join(SAVE_PATH, f'{args.epochs}_{args.batch_size}_{args.learning_rate}_{args.trainSet}_{args.save_model}')
-    loss_per_epoch = [{k:v.item() for k,v in x.items()} for x in loss_per_epoch]
+    loss_per_epoch = [{k: (v.item() if isinstance(v, torch.Tensor) else v) for k, v in x.items()} for x in loss_per_epoch]
     saveModel(model,fileSaved,loss_per_epoch)
 
 
