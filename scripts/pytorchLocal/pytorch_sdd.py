@@ -29,7 +29,7 @@ import sys
 sys.path.append(os.path.dirname(os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))))
 import pickle
 from utils_torch import CustomCocoDetection,custom_collate_fn,saveModel,read_data,calculate_mean_std_per_channel
-from models_torch import sizeEven
+from models_torch import sizeEven, pad_tensors_to_same_size
 from torchvision.transforms import Resize,Compose, ToTensor,Lambda,Normalize
 from torch.utils.data import  DataLoader 
 from scripts.utils.paths import  get_project_annotations,get_project_data_MELU_dir,get_project_data_UN_dir,get_project_models
@@ -183,7 +183,8 @@ for epoch in tqdm(range(num_epochs),total = num_epochs):
         #     pickle.dump({'all_targets_t':all_targets_t,'all_preds_t':all_preds_t},file)
         try:   
             all_targets_t = sizeEven(all_targets_t) 
-            iou = calculate_iou(torch.stack(all_targets_t), all_preds_t)
+            all_targets_t,all_preds_t = pad_tensors_to_same_size(torch.stack(all_targets_t),all_preds_t)
+            iou = calculate_iou(all_targets_t, all_preds_t)
             precision, recall, f1_score = calculate_precision_recall_f1(all_targets, all_preds)
         except Exception as e:
             print(e)
