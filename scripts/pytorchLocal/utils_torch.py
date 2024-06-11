@@ -11,7 +11,7 @@ from typing import List,Dict,Callable,Iterable,Tuple,Union,Any
 from torchvision.datasets.coco import CocoDetection
 
 import torch
-
+from torchvision.transforms.functional import resize
 import pdb
 
 
@@ -25,8 +25,10 @@ class CustomCocoDetection(CocoDetection):
 
     def __getitem__(self, index: int) -> Tuple[Any, Any]:
             image, target = super().__getitem__(index)
+         
             if self.transforms is not None:
                 image, target = self.transforms(image, target)
+                
             return image, target
 
 

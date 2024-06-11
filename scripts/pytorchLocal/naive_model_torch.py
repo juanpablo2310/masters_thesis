@@ -1,3 +1,13 @@
+# ⠀⠀⠀⠀⠀⣠⣶⣶⣶⣶⣶⣶⣶⣶⣶⣦⣤⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+# ⠀⠀⠀⠀⣀⣴⣾⠿⠿⠛⠛⠋⠉⠉⠉⠛⠛⠛⠿⢿⣿⣿⣿⣦⣄⠀⠀⠀⠀⠀
+# ⠀⠀⣠⣾⠟⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠙⢿⣿⣿⣷⡄⠀⠀⠀
+# ⠰⣶⣿⡏⠀⠀⠀⠀⠀⠀⠀⣠⣶⣶⣦⣄⣀⡀⠀⠀⠀⠀⠀⢿⣿⣿⣿⣄⣀⣀
+# ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠛⠿⠿⠿⠋⠉⠁⠀⠀⠀⠀⢀⣿⣿⣿⣿⠋⠉⠉
+# ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣴⣿⣿⣿⣿⠋⠀⠀⠀
+# ⠀⠀⠀⠀⠀⠀⢠⣾⣶⣶⣤⣤⣤⣤⣤⣤⣴⣶⣾⣿⣿⣿⣿⠿⠋⠀⠀⠀⠀⠀
+# ⠀⠀⠀⠀⠀⠀⠀⠈⠉⠙⠛⠛⠛⢿⣿⡿⠿⠿⠿⠛⠋⠉⠀⠀⠀⠀⠀⠀⠀⠀
+ 
+
 import numpy as np
 import argparse
 # from pickle import load
@@ -19,7 +29,7 @@ from torchvision.transforms import Resize,Compose,Normalize
 import pdb
 
 from utils_torch import get_maximum_number_of_annotation_in_set,read_data,\
-    CustomCocoDetection,custom_collate_fn,saveModel
+    CustomCocoDetection,custom_collate_fn,saveModel,calculate_mean_std_per_channel
 
 from models_torch import ModelFromScratch,train,test,metricsTotalPerClass,calculateTotalIOU,calculate_metrics
 from scripts.utils.paths import get_project_annotations,get_project_data_MELU_dir,get_project_data_UN_dir,get_project_models,get_project_configs
@@ -38,13 +48,13 @@ IMAGES_FOLDER = get_project_data_UN_dir('imagenes') if args.trainSet == 'UN' els
 COCO_ANNOTATION_FILE = get_project_annotations('dataset.json') if args.trainSet == 'UN' else get_project_annotations('dataset_MELU.json')
 SAVE_PATH = get_project_models('pytorch/CNN/') #os.path.join(get_project_models(), 'pytorch','CNN')
 
-# MEAN_VAL, STD_VAL = calculate_mean_std_per_channel(IMAGES_FOLDER)
+MEAN_VAL, STD_VAL = calculate_mean_std_per_channel(IMAGES_FOLDER)
 
 
 IMG_SHAPE = (500, 500)
 TRANSFORMS = Compose([
     Resize(IMG_SHAPE),
-    # Normalize(mean = MEAN_VAL, std = STD_VAL)
+    Normalize(mean = MEAN_VAL, std = STD_VAL)
     ])
 
 config_object = open(args.model_structure,'rb')

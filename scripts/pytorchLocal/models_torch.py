@@ -6,13 +6,20 @@ from typing import Iterable,Callable,List,Dict,Sequence,Union
 from torch.nn import functional as F
 import pdb
 from utils_torch import dict_load
-def pad_tensors_to_same_size(tensor1, tensor2):
+def pad_tensors_to_same_size(tensor1:torch.Tensor, tensor2:torch.Tensor):
+    
     diff = tensor1.numel() - tensor2.numel()
     if diff > 0:
+        re_size = tensor1.shape
         tensor2 = F.pad(tensor2.view(-1), (0, diff))
     elif diff < 0:
+        re_size = tensor2.shape
         tensor1 = F.pad(tensor1.view(-1), (0, -diff))
-    return tensor1, tensor2
+    else : 
+        tensor1, tensor2 = tensor1, tensor2
+        re_size = tensor1.shape
+    
+    return tensor1.view(re_size), tensor2.view(re_size)
 
 
 def sigmoid(vec:Sequence[Union[int,float]])->Sequence[Union[int,float]]:
@@ -50,14 +57,19 @@ def vectorCategoria(listaCategorias:Sequence[float],totalLabels:int)->Iterable:
         listaVectoresCategorias.append(initialVec)
     return listaVectoresCategorias
 
-def sizeEven(l:Sequence[any])->Sequence[any]:
+def sizeEven(l:list[any])->list[any]:
     lensl = [len(x) for x in l]
     maxLen = max(lensl)
-    for elem in l :
+    indexLen = np.argmax(lensl)
+    for i,elem in enumerate(l) :
         if len(elem) < maxLen:
             dummyElem = [0 for _ in range(len(elem[0]))]
             while len(elem) < maxLen:
-                elem.append(dummyElem)
+                if isinstance(elem,list):
+                    elem.append(dummyElem)
+                elif isinstance(elem,torch.Tensor):
+                    elem,_ = pad_tensors_to_same_size(elem,l[indexLen])
+                l[i] = elem
     return l 
 
 def targetPreparation(target:Iterable,totallabes:int, device:str)->tuple[Sequence[any],Sequence[any]]:
@@ -143,7 +155,7 @@ def calculate_iou(box1:Iterable, box2:Iterable)->float:
    
     return iou
 
-def calculateTotalIOU(network:Callable,totallabes:int, data_loader:Iterable, device:str)->tuple[float,float]:
+def calculateTotalIOU(network:nn.Module,totallabes:int, data_loader:Iterable, device:str)->tuple[float,float]:
     #bboxOutputsTargets.append((bboxOutput,tensorBboxTargets))
     network.eval()
     totalIOU = []
@@ -193,7 +205,7 @@ def calculateLoss(bboxOutputsTargets:Sequence[tuple],labelsOutputsTargets:Sequen
         
     return lossLabelsPerCategory, lossBboxPerCategory, correctCtg  
 
-def train(network:Callable,totallabes:int, data_loader:Iterable, criterion:Callable, optimizer:Callable, device:str)->tuple[float,Sequence[any],Sequence[any]]:
+def train(network:nn.Module,totallabes:int, data_loader:Iterable, criterion:Callable, optimizer:Callable, device:str)->tuple[float,Sequence[any],Sequence[any]]:
     network.train()
     running_loss = 0.0
 
@@ -220,7 +232,7 @@ def train(network:Callable,totallabes:int, data_loader:Iterable, criterion:Calla
     return avg_loss, lossBboxPerCategory, lossLabelsPerCategory
 
  
-def test(network:Callable,totallabes:int, data_loader:Iterable, criterion:Callable, device:str)->tuple[float,float]:
+def test(network:nn.Module,totallabes:int, data_loader:Iterable, criterion:Callable, device:str)->tuple[float,float]:
     network.eval()
     correctCtg = 0
     total = 0
