@@ -14,7 +14,8 @@ import argparse
 from json import load,dump
 from tqdm import tqdm
 import os
-
+import warnings
+warnings.catch_warnings(action='ignore')
 from PIL import ImageFile
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
@@ -25,11 +26,11 @@ import torch
 from torch import nn,optim
 from torchinfo import summary
 from torch.utils.data import  DataLoader
-from torchvision.transforms import Resize,Compose,Normalize
+from torchvision.transforms import Resize,Compose,Lambda
 import pdb
 
 from utils_torch import get_maximum_number_of_annotation_in_set,read_data,\
-    CustomCocoDetection,custom_collate_fn,saveModel,calculate_mean_std_per_channel
+    CustomCocoDetection,custom_collate_fn,saveModel,calculate_mean_std_per_channel,normalize_image
 
 from models_torch import ModelFromScratch,train,test,metricsTotalPerClass,calculateTotalIOU,calculate_metrics
 from scripts.utils.paths import get_project_annotations,get_project_data_MELU_dir,get_project_data_UN_dir,get_project_models,get_project_configs
@@ -54,7 +55,7 @@ MEAN_VAL, STD_VAL = calculate_mean_std_per_channel(IMAGES_FOLDER)
 IMG_SHAPE = (500, 500)
 TRANSFORMS = Compose([
     Resize(IMG_SHAPE),
-    Normalize(mean = MEAN_VAL, std = STD_VAL)
+    Lambda(lambda x : normalize_image(x,MEAN_VAL,STD_VAL,keep_size=True)), 
     ])
 
 config_object = open(args.model_structure,'rb')

@@ -1,3 +1,12 @@
+# ⠀⠀⠀⠀⠀⣠⣶⣶⣶⣶⣶⣶⣶⣶⣶⣦⣤⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+# ⠀⠀⠀⠀⣀⣴⣾⠿⠿⠛⠛⠋⠉⠉⠉⠛⠛⠛⠿⢿⣿⣿⣿⣦⣄⠀⠀⠀⠀⠀
+# ⠀⠀⣠⣾⠟⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠙⢿⣿⣿⣷⡄⠀⠀⠀
+# ⠰⣶⣿⡏⠀⠀⠀⠀⠀⠀⠀⣠⣶⣶⣦⣄⣀⡀⠀⠀⠀⠀⠀⢿⣿⣿⣿⣄⣀⣀
+# ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠛⠿⠿⠿⠋⠉⠁⠀⠀⠀⠀⢀⣿⣿⣿⣿⠋⠉⠉
+# ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣴⣿⣿⣿⣿⠋⠀⠀⠀
+# ⠀⠀⠀⠀⠀⠀⢠⣾⣶⣶⣤⣤⣤⣤⣤⣤⣴⣶⣾⣿⣿⣿⣿⠿⠋⠀⠀⠀⠀⠀
+# ⠀⠀⠀⠀⠀⠀⠀⠈⠉⠙⠛⠛⠛⢿⣿⡿⠿⠿⠿⠛⠋⠉⠀⠀⠀⠀⠀⠀⠀⠀
+
 import torch
 import torch.nn as nn
 import numpy as np
@@ -122,7 +131,8 @@ def bbox_de_COCO_format_Tensor(bbox:torch.Tensor)->list[float]:
     return [x_min.item(),y_min.item(),x_max.item(),y_max.item()]
 
 
-def calculate_iou(box1:Iterable, box2:Iterable)->float:
+def calculate_iou(box1:torch.Tensor, box2:torch.Tensor,format:bool=True)->float:
+    
     """
     Calculates the IoU (Intersection over Union) between two bounding boxes.
     
@@ -133,9 +143,12 @@ def calculate_iou(box1:Iterable, box2:Iterable)->float:
     Returns:
     iou -- float value representing the IoU between the two bounding boxes
     """
-  
-    box1 = bbox_de_COCO_format_Tensor(bbox=box1)
-    box2 = bbox_de_COCO_format_Tensor(bbox=box2)
+    box1, box2 = box1.view(-1), box2.view(-1)
+    
+    if format:
+        box1 = bbox_de_COCO_format_Tensor(bbox=box1)
+        box2 = bbox_de_COCO_format_Tensor(bbox=box2)
+    
     area_box1 = (box1[2] - box1[0]) * (box1[3] - box1[1])
     area_box2 = (box2[2] - box2[0]) * (box2[3] - box2[1])
 
@@ -215,6 +228,7 @@ def train(network:nn.Module,totallabes:int, data_loader:Iterable, criterion:Call
         
         optimizer.zero_grad()
         data = data.to(torch.float32).to(device)
+        #data = torch.stack(list(image.permute(1,0,2).to(device) for image in data)) #[10, 250000, 1, 3]  [10, 1, 3, 250000]
         network = network.to(torch.float32).to(device)
         output = network(data)#float()) .to(torch.float32)
         
@@ -362,16 +376,23 @@ class ModelFromScratch(nn.Module):
         self.max_boxes = max_n_boxes
 
         # Calculate the input size for the output layers
+        # (Pdb) x.shape
+        # torch.Size([10, 3, 250000, 1])
         dummy_input = torch.rand(3, *self.imageSize)
+        # pdb.set_trace()
         dummy_output = self.convBlocks(dummy_input)
+        # pdb.set_trace()
+        dummy_output = self.flatten(dummy_output)
+        # pdb.set_trace()
         output_size = dummy_output.view(-1).size(0)
+        
 
         # Bounding Box Prediction
         self.bbox_outputs = nn.ModuleList([nn.Sequential(
             nn.Linear(output_size, max_n_boxes * 4),
             nn.ReLU(),
             nn.Dropout(0.5),
-            # nn.Linear(max_n_boxes,  4),
+            nn.Linear(max_n_boxes * 4,  4),
             nn.Sigmoid()  # Output bounding box coordinates between 0 and 1
         ) for _ in range(num_classes)
         ])
@@ -386,8 +407,9 @@ class ModelFromScratch(nn.Module):
         ) for _ in range(num_classes)
         ])
 
-    def forward(self, x):
-        x = torch.permute(x,(0,3,1,2))
+    def forward(self, x:torch.Tensor):
+        #x = torch.permute(x,(0,3,1,2))
+        x = x.view(-1,3,500,500)
         x = self.convBlocks(x)
         x = self.flatten(x)
         bbox_preds = [bbox_head(x) for bbox_head in self.bbox_outputs] #self.bbox_outputs(x)

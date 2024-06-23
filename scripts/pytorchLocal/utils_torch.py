@@ -1,3 +1,11 @@
+# ⠀⠀⠀⠀⠀⣠⣶⣶⣶⣶⣶⣶⣶⣶⣶⣦⣤⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+# ⠀⠀⠀⠀⣀⣴⣾⠿⠿⠛⠛⠋⠉⠉⠉⠛⠛⠛⠿⢿⣿⣿⣿⣦⣄⠀⠀⠀⠀⠀
+# ⠀⠀⣠⣾⠟⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠙⢿⣿⣿⣷⡄⠀⠀⠀
+# ⠰⣶⣿⡏⠀⠀⠀⠀⠀⠀⠀⣠⣶⣶⣦⣄⣀⡀⠀⠀⠀⠀⠀⢿⣿⣿⣿⣄⣀⣀
+# ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠛⠿⠿⠿⠋⠉⠁⠀⠀⠀⠀⢀⣿⣿⣿⣿⠋⠉⠉
+# ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣴⣿⣿⣿⣿⠋⠀⠀⠀
+# ⠀⠀⠀⠀⠀⠀⢠⣾⣶⣶⣤⣤⣤⣤⣤⣤⣴⣶⣾⣿⣿⣿⣿⠿⠋⠀⠀⠀⠀⠀
+# ⠀⠀⠀⠀⠀⠀⠀⠈⠉⠙⠛⠛⠛⢿⣿⡿⠿⠿⠿⠛⠋⠉⠀⠀⠀⠀⠀⠀⠀⠀
 
 import numpy as np
 import json
@@ -14,7 +22,7 @@ import torch
 from torchvision.transforms.functional import resize
 import pdb
 
-
+from PIL import ImageFile
 class CustomCocoDetection(CocoDetection):
     
     def __init__(self, root, annFile, transform=None):
@@ -32,8 +40,17 @@ class CustomCocoDetection(CocoDetection):
             return image, target
 
 
+def normalize_image(image:ImageFile, mean:float, std:float,keep_size = False):
+    image_array = np.asarray(image)
+    image_tensor = torch.from_numpy(image_array).to(dtype=torch.float32).view(3, -1, 1) #torch.tensor(image).view(-1, 1, 1)
+    mean = torch.tensor(mean).view(3, -1, 1)
+    std = torch.tensor(std).view(3, -1, 1)
+    r = torch.div(torch.sub(image_tensor,mean),std) # (image-mean) / std
+    
+    return r 
 
-def normalize_image(matrix):
+
+def normalize_image_custom_collate_fn(matrix):
     norm = np.linalg.norm(matrix)
     matrix = matrix/norm  
     return matrix
@@ -43,7 +60,7 @@ def custom_collate_fn(batch):
     images = []
     targets = []
     for img, target in batch:
-        img_normalize = normalize_image(np.array(img))
+        img_normalize = normalize_image_custom_collate_fn(np.array(img))
         images.append(torch.from_numpy(img_normalize)) 
         targets.append(target)
     images = torch.stack(images, dim=0)
@@ -57,10 +74,14 @@ def calculate_mean_std_per_channel(image_folder:str)->List[float]:
     for file in os.listdir(image_folder):
         if file.endswith('.png'):
             image = imread(os.path.join(image_folder,file))
-            means_by_channels = np.mean(image,axis=(0,1))
-            stds_by_channels = np.std(image,axis=(0,1))
-            all_means.append(means_by_channels)
-            all_stds.append(stds_by_channels)
+            
+            if image is None: pass
+            else:
+                means_by_channels = np.mean(image,axis=(0,1))
+                stds_by_channels = np.std(image,axis=(0,1))
+                all_means.append(means_by_channels)
+                all_stds.append(stds_by_channels)
+        
 
     arrange_means = np.stack(all_means)
     arrange_stds = np.stack(all_stds)
