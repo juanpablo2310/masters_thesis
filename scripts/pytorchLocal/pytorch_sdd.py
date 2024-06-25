@@ -53,7 +53,7 @@ class CustomBoxPredictor(nn.Module):
         return scores, bbox_deltas
 
 
-def train(data_loader:Iterable,model:nn.Module,optimizer:torch.optim,lr_scheduler:torch.optim,device,num_classes:int):
+def train(data_loader:Iterable,model:nn.Module,optimizer:torch.optim,lr_scheduler:torch.optim,device:str,num_classes:int):
     for images, targets in data_loader:
         images = torch.stack(list(image.to(device) for image in images))#torch.stack(list(image.permute(2,0,1).to(device) for image in images)) 
         targets = [{k.replace('bbox', 'boxes').replace('category_id','labels'): torch.tensor(bbox_de_COCO_format(v)).unsqueeze(0).to(torch.float32).to(device) if k == 'bbox' else labelVec(int(v),num_classes).to(device) for k, v in t.items() if k in ['bbox','category_id']} for ann in targets for t in ann] #torch.tensor(v).to(torch.int64)
@@ -66,7 +66,7 @@ def train(data_loader:Iterable,model:nn.Module,optimizer:torch.optim,lr_schedule
     lr_scheduler.step()
     return loss_dict
 
-def test(data_loader:Iterable,model:nn.Module):
+def test(data_loader:Iterable,model:nn.Module,device:str):
     model.eval()
     with torch.no_grad():
         all_targets, all_preds = [], []
@@ -171,7 +171,7 @@ def main(args:argparse):
     for epoch in tqdm(range(num_epochs),total = num_epochs):
         loss_dict = train(data_loader=data_loader,model=model,optimizer=optimizer,lr_scheduler=lr_scheduler,device=device,num_classes=num_classes)
         loss_per_epoch.append(loss_dict)
-        precision, recall, f1_score, iou_per_box = train(data_loader=data_loader,model=model) 
+        precision, recall, f1_score, iou_per_box = train(data_loader=data_loader,model=model,device=device) 
 
         dict_load(training_metrics,epoch,'epoch')
         dict_load(training_metrics,np.mean(iou_per_box),'iou')

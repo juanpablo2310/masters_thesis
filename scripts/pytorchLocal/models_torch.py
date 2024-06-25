@@ -137,8 +137,8 @@ def calculate_iou(box1:torch.Tensor, box2:torch.Tensor,format:bool=True)->float:
     Calculates the IoU (Intersection over Union) between two bounding boxes.
     
     Arguments:
-    box1 -- list or tuple containing [x1, y1, x2, y2] coordinates of the first bounding box
-    box2 -- list or tuple containing [x1, y1, x2, y2] coordinates of the second bounding box
+    box1 -- torch.Tensor containing [x1, y1, x2, y2] coordinates of the first bounding box
+    box2 -- torch.Tensor containing [x1, y1, x2, y2] coordinates of the second bounding box
     
     Returns:
     iou -- float value representing the IoU between the two bounding boxes
@@ -160,7 +160,7 @@ def calculate_iou(box1:torch.Tensor, box2:torch.Tensor,format:bool=True)->float:
     x2 = min(box1[2], box2[2])
     y2 = min(box1[3], box2[3])
     
-    intersection_area = max(0, x2 - x1) * max(0, y2 - y1)
+    intersection_area = max(0, abs(x2 - x1)) * max(0, abs(y2 - y1))
     
     union_area = area_box1 + area_box2 - intersection_area
     
