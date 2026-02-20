@@ -1,0 +1,22 @@
+CREATE TABLE IF NOT EXISTS herbarios (
+  id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  nombre VARCHAR(255) NOT NULL,
+  afiliacion TEXT,
+  localizacion VARCHAR(255)
+);
+
+CREATE TABLE IF NOT EXISTS etiquetas (
+  id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  nombre VARCHAR(255) NOT NULL UNIQUE,
+  descripcion TEXT,
+  herbario_id INT,
+  FOREIGN KEY (herbario_id) REFERENCES herbarios(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS muestras (
+  id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  metadata JSON,
+  herbario_id INT,
+  etiquetas TEXT[],
+  FOREIGN KEY (herbario_id) REFERENCES herbarios(id) ON DELETE CASCADE
+);
