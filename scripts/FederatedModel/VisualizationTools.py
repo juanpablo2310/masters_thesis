@@ -5,6 +5,7 @@ import plotly.graph_objects as go
 from pathlib import Path
 from typing import List, Dict
 import logging
+import numpy as np
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -37,22 +38,81 @@ class VisualizationTools:
         
     def plot_performance_heatmap(self, metrics: Dict[str, List[Dict]], 
                                save_name: str = "performance"):
-        """Create heatmap of strategy performance"""
+        """Create heatmap of strategy performance.
+
+        This method auto-normalizes common irregular inputs:
+        - if a metric value is a list/array, it uses the mean
+        - non-numeric values become NaN
+        - builds a rectangular DataFrame (strategies x metrics)
+        """
+        import pandas as pd
         strategies = list(metrics.keys())
         metrics_names = ['mAP', 'precision', 'recall']
-        
-        data = []
+
+        rows = []
         for strategy in strategies:
-            last_round = metrics[strategy][-1]
-            data.append([last_round.get(metric, 0) for metric in metrics_names])
-            
+            rounds = metrics.get(strategy, [])
+            if not rounds:
+                logger.warning(f"No rounds for strategy '{strategy}'; filling with NaN")
+                rows.append([float('nan')] * len(metrics_names))
+                continue
+
+            last_round = rounds[-1]
+            row = []
+            for metric in metrics_names:
+                val = last_round.get(metric, None)
+                if val is None:
+                    row.append(float('nan'))
+                    continue
+
+                # If value is a sequence (list/tuple/ndarray), reduce to scalar (mean)
+                if isinstance(val, (list, tuple, np.ndarray)):
+                    try:
+                        arr = np.array(val, dtype=float)
+                        if arr.size == 0:
+                            row.append(float('nan'))
+                        else:
+                            row.append(float(np.nanmean(arr)))
+                            logger.debug(f"Reduced list metric for '{strategy}.{metric}' to mean")
+                    except Exception:
+                        logger.warning(f"Could not convert list metric for '{strategy}.{metric}' to numeric; using NaN")
+                        row.append(float('nan'))
+                    continue
+
+                # Try to coerce to float
+                try:
+                    row.append(float(val))
+                except Exception:
+                    logger.warning(f"Non-numeric metric for '{strategy}.{metric}': {val}; using NaN")
+                    row.append(float('nan'))
+
+            rows.append(row)
+
+        # Build DataFrame to ensure rectangular numeric input for seaborn
+        try:
+            df = pd.DataFrame(rows, index=strategies, columns=metrics_names, dtype=float)
+        except Exception as e:
+            logger.error(f"Failed to build DataFrame for heatmap: {e}")
+            # fallback: coerce to numpy array of object and try to pad
+            arr = np.array(rows, dtype=object)
+            max_cols = max(len(r) for r in rows) if rows else 0
+            mat = np.full((len(rows), max_cols), np.nan, dtype=float)
+            for i, r in enumerate(rows):
+                for j, v in enumerate(r):
+                    try:
+                        mat[i, j] = float(v)
+                    except Exception:
+                        mat[i, j] = np.nan
+            import pandas as pd
+            df = pd.DataFrame(mat, index=strategies, columns=metrics_names[:mat.shape[1]])
+
         plt.figure(figsize=(10, 8))
-        sns.heatmap(data, 
-                   xticklabels=metrics_names,
-                   yticklabels=strategies,
+        sns.heatmap(df, 
+                   xticklabels=df.columns.tolist(),
+                   yticklabels=df.index.tolist(),
                    annot=True,
                    cmap='YlOrRd')
-        
+
         plt.title('Strategy Performance Comparison')
         save_path = self.save_dir / f"{save_name}_heatmap.png"
         plt.savefig(save_path)

@@ -1,6 +1,12 @@
 from database import insert_herbario_async
 import csv 
 import asyncio
+from dotenv import load_dotenv
+import os
+
+load_dotenv("./scripts/.env")
+
+HERBARIUM_LIST_PATH = os.getenv("HERBARIUM_LIST_PATH")
 
 def load_herbarios_from_csv(file_path):
     with open(file_path, newline='', encoding='utf-8') as csvfile:
@@ -21,7 +27,7 @@ async def insert_herbarios_from_csv(file_path):
         
         
 def main():
-    file_path = "scripts/database/herbarios.csv"
+    file_path = HERBARIUM_LIST_PATH
     asyncio.run(insert_herbarios_from_csv(file_path))
     
     

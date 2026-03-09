@@ -85,7 +85,7 @@ class EnhancedFederatedTrainer(FederatedTrainer):
                 logger.error("No successful client training in this round")
                 continue
                 
-            # Aggregate and evaluate
+            # Aggregate and evaluate 
             self.server.aggregate_models(successful_clients)
             current_score = self.server._evaluate_global_model()['mAP']
             
@@ -120,7 +120,7 @@ class EnhancedFederatedTrainer(FederatedTrainer):
         for client in self.clients:
             cv_metrics = []
             splits = self.cross_validator.split_data(client)
-            
+            client.initialize_model()
             for fold_idx, (train_idx, val_idx) in enumerate(splits):
                 logger.info(f"Running fold {fold_idx + 1}/{len(splits)}")
                 metrics = self.cross_validator.validate(

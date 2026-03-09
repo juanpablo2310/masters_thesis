@@ -55,14 +55,21 @@ class FederatedClient:
         return {name: param.data.clone() for name, param in self.model.model.named_parameters()}
         
     def update_model_params(self, new_params: Dict[str, torch.Tensor]):
-        """Update local model parameters"""
-        try :
-            with torch.no_grad():
-                for name, param in self.model.model.named_parameters():
-                    param.data.copy_(new_params[name])
-        
-        except AttributeError:
+        """Update local model parameters, safely skipping mismatched tensors"""
+        if self.model is None:
             self.initialize_model()
+        with torch.no_grad():
+            for name, param in self.model.model.named_parameters():
+                if name not in new_params:
+                    continue
+                new_param = new_params[name]
+                if param.data.shape != new_param.shape:
+                    logger.warning(
+                        f"Client {self.client_id}: shape mismatch on '{name}' "
+                        f"({tuple(param.data.shape)} vs {tuple(new_param.shape)}), skipping"
+                    )
+                    continue
+                param.data.copy_(new_param)
                     
                 
 class EnhancedFederatedClient(FederatedClient):
@@ -94,3 +101,6 @@ class EnhancedFederatedClient(FederatedClient):
         if self.privacy_mechanism:
             params = self.privacy_mechanism.apply(params)
         return params
+    
+    
+    
