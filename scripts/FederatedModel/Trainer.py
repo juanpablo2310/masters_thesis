@@ -77,7 +77,9 @@ class EnhancedFederatedTrainer(FederatedTrainer):
             successful_clients = []
             
             for client in self.clients:
-                client.initialize_model()
+                client.initialize_model(    
+                                        weights_path="/Volumes/ADATA HD680/Shared/Files From d.localized/Maestria/tesis/herbario/federated_learning/runs/train27/weights/last.pt"
+                                        )
                 if client.train(epochs=self.epochs_per_round):
                     successful_clients.append(client)
                     
@@ -103,10 +105,10 @@ class EnhancedFederatedTrainer(FederatedTrainer):
                 
         # Final visualization
         if self.visualization_tools:
-            self.visualization_tools.plot_performance_heatmap(
-                self.server.metrics_tracker.metrics,
-                "final"
-            )
+            # self.visualization_tools.plot_performance_heatmap(
+            #     self.server.metrics_tracker.metrics,
+            #     "final"
+            # )
             self.visualization_tools.create_interactive_dashboard(
                 self.server.metrics_tracker.metrics
             )
@@ -120,7 +122,9 @@ class EnhancedFederatedTrainer(FederatedTrainer):
         for client in self.clients:
             cv_metrics = []
             splits = self.cross_validator.split_data(client)
-            client.initialize_model()
+            client.initialize_model(
+                weights_path="/Volumes/ADATA HD680/Shared/Files From d.localized/Maestria/tesis/herbario/federated_learning/runs/train27/weights/last.pt"
+            )
             for fold_idx, (train_idx, val_idx) in enumerate(splits):
                 logger.info(f"Running fold {fold_idx + 1}/{len(splits)}")
                 metrics = self.cross_validator.validate(

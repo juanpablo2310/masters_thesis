@@ -250,7 +250,7 @@ class FederatedServer:
     """Central server for federated learning coordination"""
     def __init__(self, 
                  aggregator: FederatedAggregator,
-                 model_save_path: str = "/Users/juanpablovargasacosta/herbario/scripts/FederatedModels/federated_models"):
+                 model_save_path: str = "/Volumes/ADATA HD680/Shared/Files From d.localized/Maestria/tesis/herbario/federated_learning/"):
         self.aggregator = aggregator
         self.model_save_path = Path(model_save_path)
         self.model_save_path.mkdir(exist_ok=True)
@@ -336,7 +336,7 @@ class EnhancedFederatedServer(FederatedServer):
     """Enhanced server with metrics tracking and dynamic weighting"""
     def __init__(self, 
                  aggregator: FederatedAggregator,
-                 model_save_path: str = "federated_models",
+                 model_save_path: str = "/Volumes/ADATA HD680/Shared/Files From d.localized/Maestria/tesis/herbario/federated_learning/federated_models",
                  metrics_tracker: MetricsTracker = None,
                  dynamic_weighting: DynamicWeighting = None):
         super().__init__(aggregator, model_save_path)

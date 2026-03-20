@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 class MetricsTracker:
     """Tracks and compares performance of different aggregation strategies"""
-    def __init__(self, save_dir: str = "federation_metrics"):
+    def __init__(self, save_dir: str = "/Volumes/ADATA HD680/Shared/Files From d.localized/Maestria/tesis/herbario/federated_learning/federation_metrics"):
         self.save_dir = Path(save_dir)
         self.save_dir.mkdir(exist_ok=True)
         self.metrics = defaultdict(list)

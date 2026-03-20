@@ -6,13 +6,14 @@ from pathlib import Path
 from typing import List, Dict
 import logging
 import numpy as np
+import pandas as pd
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class VisualizationTools:
     """Tools for visualizing federated learning metrics"""
-    def __init__(self, save_dir: str = "federation_plots"):
+    def __init__(self, save_dir: str = "/Volumes/ADATA HD680/Shared/Files From d.localized/Maestria/tesis/herbario/federated_learning/federation_plots"):
         self.save_dir = Path(save_dir)
         self.save_dir.mkdir(exist_ok=True)
         
@@ -45,7 +46,7 @@ class VisualizationTools:
         - non-numeric values become NaN
         - builds a rectangular DataFrame (strategies x metrics)
         """
-        import pandas as pd
+        
         strategies = list(metrics.keys())
         metrics_names = ['mAP', 'precision', 'recall']
 
@@ -103,7 +104,6 @@ class VisualizationTools:
                         mat[i, j] = float(v)
                     except Exception:
                         mat[i, j] = np.nan
-            import pandas as pd
             df = pd.DataFrame(mat, index=strategies, columns=metrics_names[:mat.shape[1]])
 
         plt.figure(figsize=(10, 8))

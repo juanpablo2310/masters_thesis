@@ -43,6 +43,7 @@ class FederatedClient:
                 epochs=epochs,
                 imgsz=640,
                 batch=16,
+                project='/Volumes/ADATA HD680/Shared/Files From d.localized/Maestria/tesis/herbario/federated_learning/runs',
                 device='cuda' if torch.cuda.is_available() else 'cpu'
             )
             return True
@@ -83,7 +84,9 @@ class EnhancedFederatedClient(FederatedClient):
     def evaluate(self) -> Dict[str, float]:
         """Evaluate local model performance"""
         try:
-            results = self.model.val()
+            results = self.model.val(
+                project='/Volumes/ADATA HD680/Shared/Files From d.localized/Maestria/tesis/herbario/federated_learning/runs', device='cuda' if torch.cuda.is_available() else 'cpu'
+                )
             metrics = {
                 'mAP': results.box.map,
                 'precision': results.box.p,
