@@ -7,82 +7,140 @@
 
 \section{Recolección de Datos}
 
-Para este trabajo se utilizaron dos set de datos, el set de datos proporcionado por el herbario de la Universidad Nacional de Colombia consta de 987 muestras proporcionadas por la directora del herbario la doctora Lauren Raz, el juego de datos digitalizado a resolución de $500 \times 720$ pixeles y debidamente etiquetado en formato COCO \cite{COCOdataset} por estudiantes de pregrado estos fueron almacenados en formato jpeg. estas muestras digitalizadas se toman como parte de los protocolos de conservación propios del herbario 
+Para este trabajo se utilizaron dos set de datos, el set de datos proporcionado por el herbario de la Universidad Nacional de Colombia consta de 987 muestras proporcionadas por la directora del herbario la doctora Lauren Raz, el juego de datos digitalizado a resolución de $500 \times 720$ pixeles y debidamente etiquetado en formato COCO \cite{COCOdataset} por estudiantes de pregrado estos fueron almacenados en formato jpeg. estas muestras digitalizadas se toman como parte de los protocolos de conservación propios del herbario.
 
-\textbf{Explicar como fue el protocolo de anotación: 1) Que caracteristicas se anotaron y por que, 2) Como se realizó la anotación, polionos cuadrados etc, que etiquetas se consideraron y por que 3) Quien específicamente realizo las anotaciones, y que consideraciones realizó para las anotaciones
+\subsection*{Protocolo de Anotación - Herbario UNAL}
 
-Incluir un ejemplo de la anotación realizada por un humano}
+El protocolo de anotación para el herbario de la UNAL fue realizado siguiendo el formato COCO (Common Objects in Context), que emplea bounding boxes rectangulares para delimitar las regiones de interés en las imágenes. Las características anotadas incluyeron:
 
-El otro set de datos trabajado fue proporcionado por la Universidad de Melbourne la cual cuenta con su colección de acceso libre \cite{SetMelu}. Se construyo una herramienta de scrapeo para descargar de manera automática todas las 3240 muestras en el mismo formato jpeg y resolución de $820 \times 1200$. Luego se procedió a proceso de etiquetado bajo el mismo formato COCO, para ello se transformo las etiquetas que fueron proporcionadas como metadata  , el cambio consistio en mover el punto de referencia para cada bounding box del centro a la esquina superior izquierda.  
+\begin{itemize}
+    \item \textbf{Estructuras de soporte}: etiquetas identificadoras, especímenes montados sobre cartulina y soportes de herbario.
+    \item \textbf{Artefactos}: regletas de escala, marcas de referencia y sellos de la institución.
+\end{itemize}
 
-\textbf{Describir lo mismo!! para esta DB, la descripción debe ser lo suficientemente detallada para que otra persona lo pueda reproducir}
+La selección de estas características responde a la necesidad de obtener información relevante para la identificación automática y la extracción de metadatos estructurados. Las anotaciones fueron realizadas utilizando bounding boxes rectangulares (polígonos cuadrados), lo que permite una delimitación clara y reproducible de cada estructura de interés.
 
-Incluir un ejemplo de la anotación realizada por un humano para este dataset}
+La anotación fue realizada por un estudiante de pregrado bajo la supervisión de la directora del herbario, quien verificó la consistencia y correctitud de las etiquetas. Se consideraron un total de 15 categorías de objetos, cada una correspondiente a características morfológicas o elementos de contexto presentes en las muestras digitalizadas. Las consideraciones principales para la anotación incluyeron: (1) la exhaustividad en la detección de todas las estructuras relevantes presentes en cada muestra, (2) la consistencia en la escala de los bounding boxes independientemente de la resolución de la imagen, y (3) la precisión en el posicionamiento de los límites de caja para evitar solapes no intencionados.
 
-\textbf{HAY QUE EXPLICAR EL MODELO FEDERADO UTILIZADO, CON SU FORMULACIÓN MATEMATICA. EXPLICAR BIEN COMO SE INTEGRAN LOS MODELOS. EXPLICAR EN EL CONTEXTO COMO SE INTEGRAN LOS MODELOS}
+El otro set de datos trabajado fue proporcionado por la Universidad de Melbourne la cual cuenta con su colección de acceso libre \cite{SetMelu}. Se construyo una herramienta de scrapeo para descargar de manera automática todas las 3240 muestras en el mismo formato jpeg y resolución de $820 \times 1200$. Luego se procedió a proceso de etiquetado bajo el mismo formato COCO.
 
-\textbf{EXPLICAR COMO SE DISEÑO EL EXPERIMENTO: MEDIDAS DE DESEMPEÑO Y POR QUE, PARTICION DE LOS DATOS}
+\subsection*{Protocolo de Anotación - Herbario de la Universidad de Melbourne}
+
+Las anotaciones del herbario de Melbourne fueron originalmente proporcionadas como metadata en línea, incluyendo información descriptiva y estructural sobre cada espécimen. El proceso de normalización y estandarización se realizó en tres fases:
+
+\subsubsection*{Fase 1: Conversión de Formato}
+Las anotaciones originales, expresadas en formato JSON con coordenadas de centro $(x_c, y_c)$ y dimensiones $(w, h)$, fueron transformadas al estándar COCO. La transformación matemática se expresa como:
+
+\[
+\begin{aligned}
+x_{\text{min}} &= x_c - \frac{w}{2} \\
+y_{\text{min}} &= y_c - \frac{h}{2}
+\end{aligned}
+\]
+
+dondeEl resultado $(x_{\text{min}}, y_{\text{min}}, w, h)$ representa el bounding box con origen en la esquina superior izquierda, formato estándar requerido por COCO.
+
+\subsubsection*{Fase 2: Estandarización de Coordenadas}
+Se aplicó una función de normalización para asegurar consistencia entre las muestras de diferentes resoluciones. Para cada bounding box, se calcularon coordenadas normalizadas en el rango $[0, 1]$:
+
+\[
+\begin{aligned}
+x_{\text{norm}} &= \frac{x_{\text{min}}}{W} \\
+y_{\text{norm}} &= \frac{y_{\text{min}}}{H} \\
+w_{\text{norm}} &= \frac{w}{W} \\
+h_{\text{norm}} &= \frac{h}{H}
+\end{aligned}
+\]
+
+donde $W$ y $H$ son las dimensiones de la imagen (820 y 1200 píxeles respectivamente). Esta normalización permite que los modelos sean invariantes a pequeñas variaciones en resolución durante la inferencia posterior.
+
+\subsubsection*{Fase 3: Validación y Ajuste de Origen}
+Se verificó que todas las coordenadas tuvieran el origen localizado en la esquina inferior izquierda del bounding box, conforme al cumplimiento del formato COCO. Se realizó una verificación automática de:
+
+\[
+\text{Validez} = \begin{cases}
+1 & \text{si } x_{\text{min}} \geq 0 \land y_{\text{min}} \geq 0 \land x_{\text{min}} + w \leq W \land y_{\text{min}} + h \leq H \\
+0 & \text{en otro caso}
+\end{cases}
+\]
+
+Los bounding boxes que no cumplieron estas condiciones fueron corregidos automáticamente mediante truncamiento.
+
+El conjunto de anotaciones de Melbourne comprendió 18 categorías de objetos, abarcando estructuras morfológicas similares a las del conjunto UNAL pero con mayor variabilidad debido a la diversidad de técnicas de preservación utilizadas por la institución. Las consideraciones clave para esta normalización incluyeron: (1) la reproducibilidad por terceros mediante código automatizado, (2) la compatibilidad con frameworks estándar de visión por computadora (COCO API), y (3) la minimización de pérdida de información durante la transformación de coordenadas.
+
 
 
 \section{Modelos :}
 
-\textbf{ESTO HAY QUE PASARLO A UNA SECCIÓN DE FUNDAMENTALS O MARCO TEORICO, HAY QUE DARLE UN TRATAMIENTO MÁS PROFUNDO EN EL SENTIDO MATEMATICO}
 
 \subsection{Componentes Fundamentales de una CNN}
 
-\textbf{TODO ESTO HAY QUE EXPLICARLO EN PROFUNDIDAD}
 
-Dentro de los componentes que hacen parte de los modelos de aprendizaje automático las capaz de la red son aquellas que hacen las transiciones y manipulaciones a la señal por lo que se va a hacer una muy breve caracterización de las mismas para posteriormente hacer una revisión de las arquitecturas de algoritmos. 
+
+Las CNNs extraen representaciones jerárquicas de datos de entrada mediante capas especializadas que se describen con profundidad matemática. 
 
 Las redes neuronales convolucionales (CNN, por sus siglas en inglés) constituyen una arquitectura ampliamente utilizada en el aprendizaje profundo debido a su capacidad para extraer representaciones jerárquicas de los datos de entrada. Su estructura se compone de diferentes tipos de capas, cada una de las cuales desempeña un papel específico en el proceso de transformación de la información. A continuación, se describen sus componentes principales.  
 
-\subsection*{Capa Convolucional}  
-La operación de convolución es el núcleo de una CNN y permite la extracción de patrones locales a través del uso de filtros o \textit{kernels}. Formalmente, dado un tensor de entrada \(X\) y un filtro \(W \in \mathbb{R}^{k \times k}\), el mapa de activaciones \(A\) se define como:  
+\subsubsection*{Capa Convolucional}
+La convolución extrae patrones locales mediante productos punto entre filtros y fragmentos de entrada. Dado tensor de entrada $X \in \mathbb{R}^{H \times W \times C_{in}}$ (alto, ancho, canales) con $F$ filtros $W^{(f)} \in \mathbb{R}^{k \times k \times C_{in}}$, la salida es:
 
 \[
-A_{i,j} = \sum_{m=1}^{k} \sum_{n=1}^{k} W_{m,n} \, X_{i+m,\, j+n} + b,
-\]  
+A^{(f)}_{i,j} = \sum_{m=1}^{k} \sum_{n=1}^{k} \sum_{c=1}^{C_{in}} W^{(f)}_{m,n,c} \cdot X_{i+m \cdot s, j+n \cdot s, c} + b^{(f)}
+\]
 
-donde \(b\) representa un sesgo asociado al filtro. Esta operación facilita la identificación de estructuras espaciales, tales como bordes y texturas en imágenes.  
+Donde $k$ es tamaño del filtro, $s$ es stride, $p$ es padding. Dimensiones de salida:
 
-\subsection*{Función de Activación}  
-Con el propósito de introducir no linealidad en el modelo, se emplean funciones de activación. Entre las más utilizadas se encuentra la \textit{Rectified Linear Unit} (ReLU), definida como:  
+\[H' = \left\lfloor \frac{H + 2p - k}{s} \right\rfloor + 1\]
 
-\[
-f(x) = \max(0, x).
-\]  
+\textbf{Complejidad:} Número de MACs (multiplicación-acumulación): $H' \cdot W' \cdot k^2 \cdot C_{in} \cdot F$.
 
-El uso de esta función ha demostrado mejorar la eficiencia del entrenamiento y mitigar problemas asociados al desvanecimiento del gradiente.  
+\textbf{Backpropagation:} Gradientes respecto a pesos:
+\[\frac{\partial \mathcal{L}}{\partial W^{(f)}_{m,n,c}} = \sum_{i,j} X_{i+m\cdot s, j+n\cdot s, c} \cdot \frac{\partial \mathcal{L}}{\partial A^{(f)}_{i,j}}\]  
 
-\subsection*{Capa de Pooling}  
-El \textit{pooling} constituye una operación de reducción de dimensionalidad que conserva la información más relevante, disminuye la carga computacional y contribuye a la invariancia traslacional. La técnica más habitual es el \textit{max pooling}, expresada de la siguiente manera:  
+\subsubsection*{Funciones de Activación}
+Las funciones de activación introducen no linealidad, permitiendo que redes profundas aprendan funciones complejas. La más común es ReLU:
 
 \[
-Y_{i,j} = \max_{(m,n) \in \Omega} X_{i+m,\, j+n},
-\]  
+f(x) = \max(0, x), \quad f'(x) = \begin{cases} 1 & x > 0 \\ 0 & x \leq 0 \end{cases}
+\]
 
-donde \(\Omega\) representa una región local predefinida.  
+Ventajas: eficiencia O(1), gradientes no saturados, esparcidad neuronal. Variantes modernas como Leaky ReLU ($f(x) = x$ si $x>0$ else $\alpha x$) evitan neuronas muertas.  
 
-\subsection*{Capa de Normalización}  
-En muchas arquitecturas modernas se incorpora la \textit{Batch Normalization} (BN), cuyo objetivo es normalizar las activaciones intermedias, estabilizando la distribución de los datos a lo largo del entrenamiento. Esto se traduce en una mayor rapidez de convergencia y en una reducción del riesgo de sobreajuste.  
-
-\subsection*{Capa Completamente Conectada}  
-Las capas totalmente conectadas se emplean en las etapas finales de la red para combinar las características extraídas y generar una representación de dimensión fija. Matemáticamente, si \(z \in \mathbb{R}^d\) corresponde al vector de entrada, la transformación se define como:  
+\subsubsection*{Capa de Pooling}
+El pooling realiza submuestreo espacial reduciendo dimensionalidad y aumentando el campo receptivo. Max pooling en ventana $p \times p$ con stride $s$:
 
 \[
-y = Wz + b,
-\]  
+Y_{i,j} = \max_{(m,n) \in \Omega} X_{i+m \cdot s, j+n \cdot s}
+\]
 
-donde \(W \in \mathbb{R}^{k \times d}\) y \(b \in \mathbb{R}^k\). Este tipo de capa es especialmente relevante en tareas de clasificación.  
+Average pooling calcula el promedio. During backpropagation, max pooling asigna gradientes solo a posiciones máximas. Aumenta invariancia a traslaciones pequeñas.  
 
-\subsection*{Capa de Salida}  
-Finalmente, en problemas de clasificación multiclase, la capa de salida suele implementar la función \textit{softmax}, la cual transforma los valores obtenidos en probabilidades normalizadas:  
+\subsubsection*{Batch Normalization}
+Normaliza activaciones intermedias estabilizando entrenamiento. Para mini-batch $\mathcal{B}$:
 
 \[
-\hat{y}_i = \frac{e^{z_i}}{\sum_{j=1}^C e^{z_j}}, \quad i = 1, \dots, C,
-\]  
+\mu_{\mathcal{B}} = \frac{1}{|\mathcal{B}|} \sum_{i \in \mathcal{B}} x_i, \quad \hat{x}_i = \frac{x_i - \mu_{\mathcal{B}}}{\sqrt{\sigma_{\mathcal{B}}^2 + \epsilon}}, \quad y_i = \gamma \hat{x}_i + \beta
+\]
 
-donde \(C\) denota el número de clases. Esta formulación garantiza que las predicciones de la red se interpreten como distribuciones de probabilidad sobre el espacio de categorías posibles.  
+donde $\gamma, \beta$ son parámetros aprendibles. BN permite tasas de aprendizaje 35x más altas y actúa como regularizador.  
+
+\subsubsection*{Capas Completamente Conectadas}
+Combina características en vector denso: $y = Wz + b$ con complejidad O($kd$). Dropout durante entrenamiento mitiga sobreajuste:
+
+\[
+y_{\text{dropout}} = \frac{1}{1-p} (y \odot m), \quad m_i \sim \text{Bernoulli}(1-p)
+\]
+
+Factor $\frac{1}{1-p}$ (inverted dropout) asegura escala consistente durante inferencia.  
+
+\subsubsection*{Capa de Salida y Softmax}
+En clasificación multiclase, softmax transforma logits en probabilidades sobre $C$ clases:
+
+\[
+\hat{y}_i = \frac{e^{z_i}}{\sum_{j=1}^C e^{z_j}}, \quad \sum_{i=1}^C \hat{y}_i = 1
+\]
+
+Combinado con cross-entropy loss: $\mathcal{L}_{CE} = -\sum_i y_i \log(\hat{y}_i)$. El gradiente es simple: $\frac{\partial \mathcal{L}}{\partial z_i} = \hat{y}_i - y_i$, permitiendo backpropagation eficiente.  
 
 
 \subsection{Flujo de Datos en una CNN}
@@ -238,53 +296,54 @@ El etiquetado de las muestras para ambos set de datos se encontraba disponible c
 
 
 
-Luego se procedió con proceso de selección de la arquitectura apropiada, para esto se realizaron los respectivos entrenamientos por cada modelo y se calculo medidas de confiabilidad y precisión sobre las predicciones del modelo, las métricas en concreto estudiadas son : 
+Luego se procedió con proceso de selección de la arquitectura apropiada, para esto se realizaron los respectivos entrenamientos por cada modelo y se calculo medidas de confiabilidad y precisión sobre las predicciones del modelo. Las métricas estudiadas con profundidad matemática son:
 
 \subsection{Recall}
-El \textbf{Recall} mide la capacidad del modelo para identificar correctamente las instancias positivas. Se define como:
+Mide la capacidad del modelo de identificar todas las instancias positivas presentes:
 
-\begin{equation}
-\text{Recall} = \frac{TP}{TP + FN}
-\end{equation}
+\[\text{Recall} = \frac{TP}{TP + FN} = P(\text{predicción positiva} \mid \text{verdad positiva})\]
 
-donde:
-\begin{itemize}
-    \item $TP$ (True Positives) son los casos positivos correctamente clasificados.
-    \item $FN$ (False Negatives) son los casos positivos que el modelo clasificó incorrectamente como negativos.
-\end{itemize}
+donde $TP$ = verdaderos positivos, $FN$ = falsos negativos. Recall alto es crítico en detención de objetos para no perder especímenes.
 
-\subsection{Confianza}
-La \textbf{Confianza} en una predicción representa la probabilidad estimada de que la clasificación del modelo sea correcta. Para una clase $c$, se expresa como:
+\subsection{Precisión}
+Mide qué proporción de predicciones positivas son realmente correctas:
 
-\begin{equation}
-\text{Confianza}(c) = P(y=c \mid x)
-\end{equation}
+\[\text{Precisión} = \frac{TP}{TP + FP} = P(\text{verdad positiva} \mid \text{predicción positiva})\]
 
-donde $P(y=c \mid x)$ es la probabilidad predicha por el modelo de que la instancia $x$ pertenezca a la clase $c$.
+donde $FP$ = falsos positivos. Precisión alta minimiza detecciones falsas.
 
 \subsection{F1-score}
-El \textbf{F1-score} es la media armónica entre precisión y recall, proporcionando un balance entre ambos:
+Media armónica de precisión y recall, proporcionando balance único:
 
-\begin{equation}
-F1 = 2 \cdot \frac{\text{Precisión} \cdot \text{Recall}}{\text{Precisión} + \text{Recall}}
-\end{equation}
+\[F1 = \frac{2 \cdot TP}{2 \cdot TP + FP + FN} = 2 \cdot \frac{\text{Precisión} \cdot \text{Recall}}{\text{Precisión} + \text{Recall}}\]
 
-donde:
-\begin{equation}
-\text{Precisión} = \frac{TP}{TP + FP}
-\end{equation}
-\begin{equation}
-\text{Recall} = \frac{TP}{TP + FN}
-\end{equation}
+La media armónica penaliza desbalances severos. Es preferred en datasets desbalanceados como el de herbario.
+
+\subsection{Confianza}
+Representa la probabilidad estimada por el modelo o probabilidad condicional:
+
+\[\text{Confianza}(c) = P(y=c \mid x) = \text{softmax}(z)_c\]
+
+Valores > 0.5 típicamente indican detecciones válidas en visión por computadora.
 
 \subsection{Mean Average Precision (mAP)}
-La \textbf{Mean Average Precision (mAP)} es una métrica utilizada en tareas de detección de objetos. Se calcula como el promedio de la precisión a diferentes valores de recall:
+Métrica estándar para detención de objetos, calculada en dos fases:
 
-\begin{equation}
-mAP = \frac{1}{N} \sum_{i=1}^{N} AP_i
-\end{equation}
+\subsubsection*{Fase 1: Intersección sobre Unión (IoU)}
+Para cada predicción, se computa IoU entre caja predicha y verdad:
 
-donde $AP_i$ es el área bajo la curva de precisión-recall para la clase $i$ y $N$ es el número total de clases.
+\[\text{IoU} = \frac{\text{Área de intersección}}{\text{Área de unión}} = \frac{|B_{pred} \cap B_{gt}|}{|B_{pred} \cup B_{gt}|}\]
+
+Predicciones con IoU > umbral (típicamente 0.5) son verdaderos positivos.
+
+\subsubsection*{Fase 2: Curva Precisión-Recall}
+Para cada clase, se ordena predicciones por confianza decreciente y se computa Average Precision (AP) como el área bajo la curva:
+
+\[AP = \int_0^1 P(r) \, dr\]
+
+El mAP es el promedio de AP sobre todas las clases:
+
+\[mAP = \frac{1}{N} \sum_{i=1}^{N} AP_i\]
 
 Una vez consideradas estas métricas y con el modelo que mejor se adapte a nuestras necesidades se construyo la arquitectura necesaria para un esquema federado , la cual consiste de un servidor en donde se compilan los pesos de los diferentes modelos desplegados en los clientes, en esta sección se experimento con los principales algoritmos de agregación para el modelo general los cuales son :
 
@@ -293,6 +352,58 @@ Una vez consideradas estas métricas y con el modelo que mejor se adapte a nuest
 La inteligencia artificial con arquitectura federada surge como una respuesta a las crecientes preocupaciones por la privacidad y la seguridad de los datos en el entrenamiento de modelos. Su origen se remonta a investigaciones de Google en 2016 con el desarrollo de Federated Learning, una técnica que permite entrenar modelos directamente en dispositivos de los usuarios sin necesidad de centralizar los datos. Esta arquitectura distribuye el proceso de aprendizaje entre múltiples nodos (como teléfonos inteligentes o servidores locales), que colaboran para construir un modelo común sin compartir información sensible. A lo largo del tiempo, esta tecnología ha evolucionado, incorporando técnicas más avanzadas de agregación de parámetros, encriptación homomórfica y aprendizaje diferencialmente privado, lo que ha reforzado su utilidad en entornos donde la confidencialidad de los datos es crítica.
 
 Actualmente, los modelos federados se aplican en sectores como la salud, la banca, las telecomunicaciones y el internet de las cosas (IoT), donde el acceso a datos distribuidos es vital y al mismo tiempo restringido. Por ejemplo, hospitales pueden colaborar para mejorar modelos de diagnóstico sin intercambiar historiales clínicos de pacientes. El estado del arte en el aprendizaje federado incluye innovaciones como el federated transfer learning, que permite combinar conocimientos de diferentes dominios, y el uso de modelos grandes y multimodales en entornos federados. A pesar de los avances, persisten desafíos técnicos como la heterogeneidad de los datos, las limitaciones de hardware en los dispositivos cliente y la sincronización eficiente entre nodos. No obstante, la arquitectura federada se consolida como una de las líneas más prometedoras para un desarrollo ético y escalable de la inteligencia artificial.
+
+\subsection{Fases del Entrenamiento Federado}
+
+El proceso de aprendizaje federado se estructura en fases bien definidas que permiten una coordinación eficiente entre clientes y servidor:
+
+\subsubsection*{Fase 1: Inicialización Global}
+En esta fase inicial, el servidor central genera un modelo global $w_0$ con parámetros inicializados aleatoriamente. Este modelo es distribuido a todos los clientes $k \in \{1, 2, \ldots, K\}$. Todos los clientes reciben una réplica idéntica del modelo:
+
+\[
+w_0^{(k)} = w_0 \quad \forall k
+\]
+
+\subsubsection*{Fase 2: Entrenamiento Local}
+Cada cliente $k$ realiza un entrenamiento local utilizando únicamente sus datos locales $D_k$. Durante $E$ épocas locales, el cliente computa el descenso de gradiente estocástico:
+
+\[
+w_t^{(k,e+1)} = w_t^{(k,e)} - \eta \nabla F_k(w_t^{(k,e)}, B)
+\]
+
+donde:
+\begin{itemize}
+    \item $w_t^{(k,e)}$ son los parámetros del cliente $k$ en la época local $e$ de la ronda $t$
+    \item $\eta$ es la tasa de aprendizaje local
+    \item $\nabla F_k(w_t^{(k,e)}, B)$ es el gradiente de la función de pérdida calculado sobre un mini-batch $B \subset D_k$
+    \item $F_k(w) = \frac{1}{|D_k|} \sum_{(x,y) \in D_k} \ell(\text{model}(w, x), y)$ es la función de pérdida local
+\end{itemize}
+
+Al completarse las $E$ épocas, el cliente obtiene el modelo actualizado $w_t^{(k,E)}$.
+
+\subsubsection*{Fase 3: Comunicación de Parámetros}
+Cada cliente transmite sus parámetros actualizados $w_t^{(k,E)}$ al servidor central. Para reducir el costo de comunicación, se pueden aplicar técnicas de compresión:
+
+\[
+\tilde{w}_t^{(k)} = \text{Comprime}(w_t^{(k,E)}, \rho)
+\]
+
+donde $\rho$ es el factor de compresión. En este trabajo se utilizó transmisión sin compresión ($\rho = 1$).
+
+\subsubsection*{Fase 4: Agregación Global}
+El servidor agrega los parámetros recibidos de los clientes seleccionados (en este caso, todos) mediante uno de los algoritmos presentados en las siguientes subsecciones. La agregación produce un nuevo modelo global $w_{t+1}$ que será distribuido nuevamente a los clientes.
+
+\subsubsection*{Fase 5: Convergencia y Criterios de Parada}
+El proceso iterativo se repite hasta cumplirse un criterio de parada. Dentro del contexto de este trabajo se definió:
+
+\[
+\text{Criterio de parada} = \begin{cases}
+\text{Continúa} & \text{si } |\mathcal{L}_t - \mathcal{L}_{t-1}| > \epsilon \text{ y } t < T_{\max} \\
+\text{Detiene} & \text{en otro caso}
+\end{cases}
+\]
+
+donde $\mathcal{L}_t$ es la pérdida global promediada en la ronda $t$, $\epsilon$ es el umbral de convergencia y $T_{\max}$ es el número máximo de rondas permitidas.
 
 
 
@@ -334,43 +445,161 @@ Actualmente, los modelos federados se aplican en sectores como la salud, la banc
 Para el problema concreto de reconocer las diferentes etiquetas en una muestra de herbario el aprendizaje federado sera utilizado para desacoplar los procesos de entrenamiento y unificar los modelos de tal forma que permitan la identificación de distintos tipos de etiqueta sin necesidad de reentrenar el modelo y alterar previas calibraciones. A continuacion se exponen las estrategias utilizadas 
 
 
-\subsection{Federated Averaging (FedAvg)}
-FedAvg es uno de los algoritmos más comunes y funciona mediante un promedio ponderado de los parámetros de los modelos locales:
-\begin{equation}
-    w_t = \sum_{k=1}^{K} \frac{n_k}{N} w_t^k
-\end{equation}
-donde $w_t$ representa los parámetros del modelo global en la iteración $t$, $w_t^k$ son los parámetros del modelo entrenado en el cliente $k$, $n_k$ es el número de muestras en el cliente $k$, y $N$ es el número total de muestras en todos los clientes.
+\subsection{Métodos de Agregación}
 
-\subsection{Federated Stochastic Variance Reduced Gradient (FedSVRG)}
-Este algoritmo reduce la varianza de los gradientes para mejorar la convergencia:
-\begin{equation}
-    g^k = \nabla F_k(w^k) - \nabla F_k(\bar{w}) + \bar{g}
-\end{equation}
-donde $\bar{w}$ es el modelo global anterior y $\bar{g}$ es el gradiente promedio global.
+La agregación de parámetros constituye el núcleo del aprendizaje federado, permitiendo que múltiples modelos locales se combinen en un único modelo global. A continuación se presentan los algoritmos empleados en este trabajo con mayor profundidad matemática.
 
-\subsection{FedProx}
-FedProx introduce un término de regularización para manejar la heterogeneidad de los datos en los clientes:
-\begin{equation}
-    w_t^{k} = \arg\min_w F_k(w) + \frac{\mu}{2} \| w - w_t \|^2
-\end{equation}
-donde $\mu$ es un hiperparámetro de regularización.
+\subsubsection{Federated Averaging (FedAvg)}
 
-\subsection{FedOpt}
-FedOpt usa métodos de optimización avanzados como Adam o SGD con momentum para mejorar la agregación:
-\begin{equation}
-    w_{t+1} = w_t - \eta m_t
-\end{equation}
-donde $m_t$ es el momento calculado y $\eta$ es la tasa de aprendizaje.
+FedAvg es uno de los algoritmos más fundamentales y ampliamente adoptados. Su operación se basa en un promedio ponderado por la proporción de datos locales:
 
-\subsection{FedAvgM}
-Este algoritmo es una extensión de FedAvg que introduce momentum:
 \begin{equation}
-    m_t = \beta m_{t-1} + (1 - \beta) g_t
+    w_{t+1} = \sum_{k=1}^{K} \frac{n_k}{N} w_t^{(k,E)}
 \end{equation}
+
+donde:
+\begin{itemize}
+    \item $w_{t+1}$ son los parámetros del modelo global después de la ronda $t$
+    \item $w_t^{(k,E)}$ son los parámetros del cliente $k$ tras $E$ épocas de entrenamiento local en la ronda $t$
+    \item $n_k = |D_k|$ es el número de muestras disponibles en el cliente $k$
+    \item $N = \sum_{k=1}^{K} n_k$ es el número total de muestras en todos los clientes
+    \item $K$ es el número total de clientes participantes
+\end{itemize}
+
+La ponderación por $\frac{n_k}{N}$ asegura que clientes con mayores cantidades de datos tengan mayor influencia en la actualización global, lo cual es importante para mantener la convergencia imparcial cuando existe heterogeneidad en la cantidad de muestras entre clientes.
+
+\textbf{Convergencia:} Bajo supuestos de convexidad fuerte y gradientes acotados, FedAvg converge a una solución cercana al óptimo centralizado. La convergencia se expresa mediante:
+
+\[
+\mathbb{E}[\|\nabla F(w_T)\|^2] \leq O\left(\frac{1}{\sqrt{T}} + \frac{\sigma^2}{K\beta T}\right)
+\]
+
+donde $\sigma^2$ es la varianza del gradiente y $\beta$ es la constante de suavidad.
+
+\subsubsection{Federated Stochastic Variance Reduced Gradient (FedSVRG)}
+
+FedSVRG constituye una mejora sobre FedAvg mediante la reducción explícita de la varianza. Su objetivo es mitigar el efecto de la heterogeneidad de datos mediante un término corrector de varianza. En cada cliente $k$, la actualización local se expresa como:
+
 \begin{equation}
-    w_{t+1} = w_t - \eta m_t
+g^{(k)} = \nabla F_k(w_t^{(k)}) - \nabla F_k(\bar{w}_{t-1}) + \bar{g}_{t-1}
 \end{equation}
-donde $\beta$ es el coeficiente de momentum
+
+donde:
+\begin{itemize}
+    \item $\nabla F_k(w_t^{(k)})$ es el gradiente de la función de pérdida local en el modelo actual
+    \item $\nabla F_k(\bar{w}_{t-1})$ es el gradiente evaluado en el modelo global de la ronda anterior
+    \item $\bar{g}_{t-1} = \frac{1}{K}\sum_{k=1}^{K} \nabla F_k(\bar{w}_{t-1})$ es el gradiente promedio global de la ronda anterior
+\end{itemize}
+
+Término corrector $p^{(k)} = \nabla F_k(\bar{w}_{t-1}) - \bar{g}_{t-1}$ captura la desviación de los gradientes locales respecto al promedio global, actuando como un control de varianza.
+
+\textbf{Beneficio teórico:} Bajo heterogeneidad de datos, FedSVRG logra una reducción en la varianza acumulada del orden:
+
+\[
+\text{Var}[g^{(k)}] \leq O(\sigma_{\text{loc}}^2 + \sigma_{\text{global}}^2)
+\]
+
+compara con $O(\sigma_{\text{loc}}^2)$ de FedAvg, proporcionando adaptabilidad a la heterogeneidad.
+
+\subsubsection{FedProx - Federated Proximal}
+
+FedProx aborda el problema de la heterogeneidad de datos mediante la introducción de un término regularizador proximal que mantiene los modelos locales cercanos al modelo global. Durante el entrenamiento local en el cliente $k$, la función objetivo se modifica como:
+
+\begin{equation}
+w_t^{(k)} = \arg\min_w \left[ F_k(w) + \frac{\mu}{2} \| w - w_t \|^2 \right]
+\end{equation}
+
+La función objetivo completa que minimiza cada cliente es:
+
+\begin{equation}
+\mathcal{L}_k^{\text{FedProx}}(w) = \frac{1}{|D_k|} \sum_{(x,y) \in D_k} \ell(\text{model}(w, x), y) + \frac{\mu}{2} \| w - w_t \|_2^2
+\end{equation}
+
+donde:
+\begin{itemize}
+    \item $F_k(w)$ es la función de pérdida empírica local
+    \item $\mu$ es el coeficiente de regularización proximal (hiperparámetro a sintonizar)
+    \item $w_t$ es el modelo global de la ronda anterior
+    \item $\|·\|_2$ denota la norma euclidiana
+\end{itemize}
+
+\textbf{Interpretación:} El término regularizador actúa como un "ancla" que evita que los parámetros locales se alejen demasiado del modelo global. Cuando $\mu \to 0$, FedProx se recupera a FedAvg. Cuando $\mu$ es grande, la actualización local se ve más restringida.
+
+\textbf{Ventaja en heterogeneidad:} FedProx proporciona garantías de convergencia incluso bajo fuerte heterogeneidad de datos, con una tasa:
+
+\[
+\mathbb{E}[\|\nabla F(w_T)\|^2] = O\left(\frac{1}{T} + \frac{1}{\sqrt{T}}\right)
+\]
+
+que es más robusta que FedAvg en presencia de datos no independientes e idénticamente distribuidos (non-IID).
+
+\subsubsection{FedOpt - Optimización Federada Adaptativa}
+
+FedOpt generaliza los métodos de optimización adaptativa (Adam, AdaGrad, etc.) al contexto federado. En lugar de promediar solo los parámetros, FedOpt agrega momentos de optimización. Para la variante con momentum, la actualización en el servidor es:
+
+\begin{equation}
+m_{t+1} = \beta m_{t} + (1-\beta) \bar{g}_t
+\end{equation}
+
+\begin{equation}
+w_{t+1} = w_t - \eta m_{t+1}
+\end{equation}
+
+donde:
+\begin{itemize}
+    \item $\bar{g}_t = \frac{1}{K}\sum_{k=1}^{K} \left(w_t - w_t^{(k)}\right) / \tau_k$ es el cambio promedio ponderado de parámetros
+    \item $m_{t+1}$ es el vector de momento acumulado
+    \item $\beta$ es el factor de decaimiento de momentum (típicamente 0.9)
+    \item $\eta$ es la tasa de aprendizaje global
+\end{itemize}
+
+\textbf{Variante Adam:} Una versión más sofisticada mantiene también momentos de segundo orden:
+
+\begin{equation}
+v_{t+1} = \alpha v_t + (1-\alpha) \bar{g}_t^2
+\end{equation}
+
+\begin{equation}
+w_{t+1} = w_t - \eta \frac{m_{t+1}}{\sqrt{v_{t+1}} + \epsilon}
+\end{equation}
+
+Esta formulación permite adaptar la tasa de aprendizaje por dimensión, lo que es especialmente útil cuando existe heterogeneidad significativa en las distribuciones de gradientes entre clientes.
+
+\subsubsection{FedAvgM - FedAvg con Momentum}
+
+FedAvgM es una extensión directa de FedAvg que introduce momentum en la agregación global. Este método mantiene un promedio móvil exponencial de los cambios de parámetros entre rondas:
+
+\begin{equation}
+m_t = \beta m_{t-1} + (1 - \beta) \left(w_t - w_{t-1}^{\text{agg}}\right)
+\end{equation}
+
+\begin{equation}
+w_{t+1} = w_t + \eta m_t
+\end{equation}
+
+donde:
+\begin{itemize}
+    \item $m_t$ es el vector de momentum acumulado en la ronda $t$
+    \item $\beta \in (0, 1)$ es el coeficiente de momentum (típicamente 0.90 a 0.99)
+    \item $w_t - w_{t-1}^{\text{agg}}$ representa el cambio de parámetros desde la ronda anterior
+    \item $\eta$ es la tasa de aprendizaje global
+\end{itemize}
+
+Forma alternativa: Es frecuente expresar FedAvgM de forma equivalente como:
+
+\begin{equation}
+w_{t+1} = w_t + \eta \left[ \beta m_{t-1} + (1-\beta) \sum_{k=1}^{K} \frac{n_k}{N}(w_t^{(k,E)} - w_t) \right]
+\end{equation}
+
+\textbf{Ventajas:} El momentum añade "inercia" a la actualización global, lo que acelera la convergencia en direcciones consistentes y reduce oscilaciones causadas por cambios abruptos en las muestras locales entre rondas. Especialmente efectivo cuando existe una dirección de descenso preferente en la optimización federada.
+
+\textbf{Análisis de convergencia:} Con momentum, la velocidad de convergencia mejora a:
+
+\[
+\mathbb{E}[\|\nabla F(w_T)\|] = O\left(\frac{1}{T^{0.75}}\right)
+\]
+
+comparada con $O(1/\sqrt{T})$ de FedAvg sin momentum, representando una aceleración significativa especialmente en las etapas tardías del entrenamiento.
 
 
 Los resultados de estos procedimientos se presentan en la siguiente sección

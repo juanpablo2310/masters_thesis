@@ -106,6 +106,8 @@ class VisualizationTools:
                         mat[i, j] = np.nan
             df = pd.DataFrame(mat, index=strategies, columns=metrics_names[:mat.shape[1]])
 
+        
+        
         plt.figure(figsize=(10, 8))
         sns.heatmap(df, 
                    xticklabels=df.columns.tolist(),

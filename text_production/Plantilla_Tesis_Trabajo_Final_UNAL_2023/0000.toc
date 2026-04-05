@@ -22,34 +22,37 @@
 \contentsline {section}{\numberline {2.4}Visión por Computadora en el Aprendizaje Federado}{6}{section.2.4}%
 \contentsline {chapter}{\numberline {3}Materiales y Metodos:}{7}{chapter.3}%
 \contentsline {section}{\numberline {3.1}Recolección de Datos}{7}{section.3.1}%
-\contentsline {section}{\numberline {3.2}Modelos :}{8}{section.3.2}%
-\contentsline {subsection}{\numberline {3.2.1}Componentes Fundamentales de una CNN}{8}{subsection.3.2.1}%
-\contentsline {subsection}{\numberline {3.2.2}Flujo de Datos en una CNN}{10}{subsection.3.2.2}%
-\contentsline {subsection}{\numberline {3.2.3}Arquitecturas Populares}{10}{subsection.3.2.3}%
-\contentsline {subsubsection}{LeNet-5}{10}{subsection.3.2.3}%
+\contentsline {section}{\numberline {3.2}Modelos :}{9}{section.3.2}%
+\contentsline {subsection}{\numberline {3.2.1}Componentes Fundamentales de una CNN}{9}{subsection.3.2.1}%
+\contentsline {subsection}{\numberline {3.2.2}Flujo de Datos en una CNN}{11}{subsection.3.2.2}%
+\contentsline {subsection}{\numberline {3.2.3}Arquitecturas Populares}{11}{subsection.3.2.3}%
+\contentsline {subsubsection}{LeNet-5}{11}{subsection.3.2.3}%
 \contentsline {subsubsection}{AlexNet}{11}{subsection.3.2.3}%
-\contentsline {subsubsection}{VGGNet}{11}{subsection.3.2.3}%
-\contentsline {subsubsection}{ResNet}{11}{subsection.3.2.3}%
-\contentsline {subsubsection}{YOLO (You Only Look Once)}{11}{subsection.3.2.3}%
-\contentsline {subsubsection}{SSD (Single Shot MultiBox Detector)}{12}{figure.caption.7}%
-\contentsline {section}{\numberline {3.3}Métodos :}{13}{section.3.3}%
-\contentsline {subsection}{\numberline {3.3.1}Recall}{14}{subsection.3.3.1}%
-\contentsline {subsection}{\numberline {3.3.2}Confianza}{15}{subsection.3.3.2}%
+\contentsline {subsubsection}{VGGNet}{12}{subsection.3.2.3}%
+\contentsline {subsubsection}{ResNet}{12}{subsection.3.2.3}%
+\contentsline {subsubsection}{YOLO (You Only Look Once)}{12}{subsection.3.2.3}%
+\contentsline {subsubsection}{SSD (Single Shot MultiBox Detector)}{13}{figure.caption.7}%
+\contentsline {section}{\numberline {3.3}Métodos :}{14}{section.3.3}%
+\contentsline {subsection}{\numberline {3.3.1}Recall}{15}{subsection.3.3.1}%
+\contentsline {subsection}{\numberline {3.3.2}Precisión}{15}{subsection.3.3.2}%
 \contentsline {subsection}{\numberline {3.3.3}F1-score}{15}{subsection.3.3.3}%
-\contentsline {subsection}{\numberline {3.3.4}Mean Average Precision (mAP)}{15}{subsection.3.3.4}%
+\contentsline {subsection}{\numberline {3.3.4}Confianza}{15}{subsection.3.3.4}%
+\contentsline {subsection}{\numberline {3.3.5}Mean Average Precision (mAP)}{16}{subsection.3.3.5}%
 \contentsline {section}{\numberline {3.4}Modelo Federado}{16}{section.3.4}%
-\contentsline {subsection}{\numberline {3.4.1}Federated Averaging (FedAvg)}{17}{subsection.3.4.1}%
-\contentsline {subsection}{\numberline {3.4.2}Federated Stochastic Variance Reduced Gradient (FedSVRG)}{17}{subsection.3.4.2}%
-\contentsline {subsection}{\numberline {3.4.3}FedProx}{17}{subsection.3.4.3}%
-\contentsline {subsection}{\numberline {3.4.4}FedOpt}{17}{subsection.3.4.4}%
-\contentsline {subsection}{\numberline {3.4.5}FedAvgM}{17}{subsection.3.4.5}%
-\contentsline {chapter}{\numberline {4}Resultados}{19}{chapter.4}%
-\contentsline {section}{\numberline {4.1}Primeras detecciones :}{19}{section.4.1}%
-\contentsline {section}{\numberline {4.2}Modelo Federado :}{22}{section.4.2}%
-\contentsline {chapter}{\numberline {5}Discusión de resultados}{24}{chapter.5}%
-\contentsline {section}{\numberline {5.1}Comparación con la literatura}{24}{section.5.1}%
-\contentsline {section}{\numberline {5.2}Limitaciones del estudio}{24}{section.5.2}%
-\contentsline {section}{\numberline {5.3}Implicaciones para herbarios digitales y perspectivas futuras}{25}{section.5.3}%
-\contentsline {chapter}{\numberline {6}Conclusiones}{26}{chapter.6}%
-\contentsline {chapter}{\numberline {7}Recomendaciones}{27}{chapter.7}%
+\contentsline {subsection}{\numberline {3.4.1}Fases del Entrenamiento Federado}{17}{subsection.3.4.1}%
+\contentsline {subsection}{\numberline {3.4.2}Métodos de Agregación}{19}{subsection.3.4.2}%
+\contentsline {subsubsection}{Federated Averaging (FedAvg)}{19}{subsection.3.4.2}%
+\contentsline {subsubsection}{Federated Stochastic Variance Reduced Gradient (FedSVRG)}{19}{equation.3.1}%
+\contentsline {subsubsection}{FedProx - Federated Proximal}{20}{equation.3.2}%
+\contentsline {subsubsection}{FedOpt - Optimización Federada Adaptativa}{21}{equation.3.4}%
+\contentsline {subsubsection}{FedAvgM - FedAvg con Momentum}{22}{equation.3.8}%
+\contentsline {chapter}{\numberline {4}Resultados}{23}{chapter.4}%
+\contentsline {section}{\numberline {4.1}Primeras detecciones :}{23}{section.4.1}%
+\contentsline {section}{\numberline {4.2}Modelo Federado :}{24}{section.4.2}%
+\contentsline {chapter}{\numberline {5}Discusión de resultados}{26}{chapter.5}%
+\contentsline {section}{\numberline {5.1}Comparación con la literatura}{26}{section.5.1}%
+\contentsline {section}{\numberline {5.2}Limitaciones del estudio}{26}{section.5.2}%
+\contentsline {section}{\numberline {5.3}Implicaciones para herbarios digitales y perspectivas futuras}{27}{section.5.3}%
+\contentsline {chapter}{\numberline {6}Conclusiones}{28}{chapter.6}%
+\contentsline {chapter}{\numberline {7}Recomendaciones}{29}{chapter.7}%
 \contentsfinish 

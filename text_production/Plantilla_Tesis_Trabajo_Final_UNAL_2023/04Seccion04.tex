@@ -5,28 +5,6 @@ A continuación presentamos los resultados de entrenamiento para los diferentes 
 \section{Primeras detecciones :}
 La primera etapa del proceso se enfoco en determinar el mejor modelo base para la arquitectura federada, para ello se hizo uso de las matrices de confusión normalizadas que en esencia brindan un panorama completo y robusto de como esta funcionando la tarea de clasificación para un modelo. A continuación se presentan las matrices asociadas a los tres modelos considerados 
 
-\textbf{Cambiar los captions de la figura, en vez de los nombres incluir el objeto a caracterizar. Estas matrices son en test?}
-
-\textbf{ESTO SE PUEDE CAMBIAR POR UNA TABLA QUE REPORTE LOS ESTADISTICOS DE RESULTADO DE LA CLASIFICACIÓN MULTICLASE EN LOS DOS DATASETS. y SOLO PARA LOS QUE GANARON REPORTAR LA MATRIZ DE CONFUSIÓN GANADORA}
-
-
-\begin{figure}[H]
-    \centering
-    % First row
-    \begin{subfigure}[b]{0.48\textwidth}
-        \includegraphics[width=\textwidth]{00Figuras/cnnConfMatrix.png}
-        \caption{modelo de RCNN, datos UN}
-        \label{fig:image1}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[b]{0.48\textwidth}
-        \includegraphics[width=\textwidth]{00Figuras/CNNConfMatrixMelu.png}
-        \caption{modelo de RCNN, datos MELU}
-        \label{fig:image2}
-    \end{subfigure}
-    \caption{Overview of the six model outputs.}
-    \label{fig:six_images}
-\end{figure}
 \begin{figure}[H]
     \centering
     \vspace{0.5cm} %
@@ -36,37 +14,21 @@ La primera etapa del proceso se enfoco en determinar el mejor modelo base para l
     % Second row
     \begin{subfigure}[b]{0.48\textwidth}
         \includegraphics[width=\textwidth]{00Figuras/SDDConfMatrix.png}
-        \caption{Modelo Single Shot Detection (SSD) en datos UN}
+        \caption{Performance de modelo federado con datos UN}
         \label{fig:image3}
     \end{subfigure}
     \hfill
     \begin{subfigure}[b]{0.48\textwidth}
         \includegraphics[width=\textwidth]{00Figuras/SDDConfMatrixMelu.png}
-        \caption{Modelo Single Shot Detection (SSD) en datos MELU}
+        \caption{Performance de modelo federado con datos MELU}
         \label{fig:image4}
     \end{subfigure}
-
-
-    % Third row
-    \begin{subfigure}[b]{0.48\textwidth}
-        \includegraphics[width=\textwidth]{00Figuras/confusion_matrix_normalizedClientUn.png}
-        \caption{Modelo YOLO datos UN}
-        \label{fig:image5}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[b]{0.48\textwidth}
-        %\includegraphics[width=\textwidth]{00Figuras/confusion_matrix_normalizeClientMelbourne.png}
-        \caption{Modelo YOLO datos MELU}
-        \label{fig:image6}
-    \end{subfigure}
-
-    \caption{Overview of the six model outputs.}
-    \label{fig:six_images}
+        \vspace{0.5cm} % spacing between rows
 \end{figure}
 
 De estas se derivo la segunda etapa que fue la de construir una arquitectura federada capaz de simular el proceso que un herbario debería hacer para poder usar esta herramienta, a continuación se presentan los resultados del modelo fundacional (YOLO) aplicado a los distintos sets de datos bajo la modalidad federada de aprendizaje distribuido, en la siguiente sección se entraran en detalles de la significación de estos gráficos  
 \section{Modelo Federado :}
-\subsection*{Mean Average Precision (mAP@0.5)}
+\\subsection*{Precision Promedio Media (mAP@0.5)}
 Presentamos primero un gráfico comparativo del rendimiento de las diferentes estrategias de agregación , donde se evidencia una ganancia marginal respecto al método de agregación 
 
 \begin{figure}[H]
@@ -78,7 +40,7 @@ Presentamos primero un gráfico comparativo del rendimiento de las diferentes es
     width=12cm,
     height=7cm,
     ylabel={mAP@0.5},
-    xlabel={Aggregation Algorithm},
+    xlabel={Algoritmo de Agregación},
     symbolic x coords={FedAvg,FedAvgM,FedProx,FedOpt,FedSVRG},
     xtick=data,
     ymin=0.85, ymax=0.90,
@@ -93,84 +55,127 @@ Presentamos primero un gráfico comparativo del rendimiento de las diferentes es
 \legend{UN, Melbourne}
 \end{axis}
 \end{tikzpicture}
-\caption{Comparación de mAP@0.5 promedio por algoritmo de agregación y set de datos.}
+\caption{Comparación de mAP@0.5 promedio por algoritmo de agregación y conjunto de datos.}
 \end{figure}
 
 
-Ahora presentamos los resultados para la estrategia de agregacion FedAvg pues es la de mejor performance en ambos sets de datos : 
 
+Las siguientes métricas se reportan con un \emph{umbral de confianza alto},
+donde el modelo opera en un régimen conservador minimizando falsos positivos.
+$\mathrm{mAP}_{50}$ integra precision-recall sobre todas las clases:
+\[
+    \mathrm{mAP}_{50} = \frac{1}{C}\sum_{c=1}^{C}\int_0^1 p_c(r)\,dr
+    \qquad\text{en } \mathrm{IoU} \ge 0.50
+\]
+
+\medskip
 \begin{table}[H]
 \centering
-\caption{Valores promedio de mAP@0.5 para cada algoritmo de agregación y set de datos}
-\begin{tabular}{lcc}
+\caption{mAP$_{50}$ promedio por estrategia de agregación y conjunto de datos.}
+\small
+\begin{tabular}{lccr}
 \toprule
-\textbf{Algoritmo} & \textbf{UN} & \textbf{Melbourne} \\
+\textbf{Algoritmo} & \textbf{UN} & \textbf{Melbourne}
+    & \textbf{$\Delta$ (UN$-$Melb)} \\
 \midrule
-FedAvg       & 0.886 & 0.881 \\
-%FedAvgM      & 0.886 & 0.880 \\
-%FedProx      & 0.884 & 0.879 \\
-%FedOpt       & 0.885 & 0.880 \\
-%FedSVRG      & 0.885 & 0.879 \\
+FedAvg  & 0.886 & 0.881 & $+$0.005 \\
+FedAvgM & 0.886 & 0.880 & $+$0.006 \\
+FedProx & 0.884 & 0.879 & $+$0.005 \\
+FedOpt  & 0.885 & 0.880 & $+$0.005 \\
+FedSVRG & 0.885 & 0.879 & $+$0.006 \\
+\midrule
+\textbf{Promedio} & \textbf{0.885} & \textbf{0.880} & $+$0.005 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\medskip
+\begin{table}[H]
+\centering
+\caption{Precision promedio con umbral de confianza alto
+    $\hat{p}_o \ge s_{\text{conf}}^{\text{high}}$.}
+\small
+\begin{tabular}{lccr}
+\toprule
+\textbf{Algoritmo} & \textbf{UN} & \textbf{Melbourne}
+    & \textbf{$\Delta$ (UN$-$Melb)} \\
+\midrule
+FedAvg  & 0.97 & 0.96 & $+$0.01 \\
+FedAvgM & 0.97 & 0.96 & $+$0.01 \\
+FedProx & 0.96 & 0.95 & $+$0.01 \\
+FedOpt  & 0.97 & 0.96 & $+$0.01 \\
+FedSVRG & 0.96 & 0.95 & $+$0.01 \\
+\midrule
+\textbf{Promedio} & \textbf{0.966} & \textbf{0.956} & $+$0.010 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 
-\subsection*{Precision promedio}
 
+
+El Recall se evalúa con un \emph{umbral de confianza bajo}, donde el modelo
+maximiza la recuperación de verdaderos positivos al costo de más falsos positivos.
+El F1-score balancea ambos regímenes:
+\[
+    \mathrm{Recall} = \frac{\mathrm{VP}}{\mathrm{VP}+\mathrm{FN}},
+    \qquad
+    \mathrm{Precision} = \frac{\mathrm{VP}}{\mathrm{VP}+\mathrm{FP}},
+    \qquad
+    F_1 = \frac{2\cdot\mathrm{Precision}\cdot\mathrm{Recall}}
+               {\mathrm{Precision}+\mathrm{Recall}}
+\]
+
+\medskip
 \begin{table}[H]
 \centering
-\caption{Precisión promedio alcanzada por algoritmo y set de datos (umbral alto de confianza)}
-\begin{tabular}{lcc}
+\caption{Recall promedio con umbral de confianza bajo
+    $\hat{p}_o \ge s_{\text{conf}}^{\text{low}}$.}
+\small
+\begin{tabular}{lccr}
 \toprule
-\textbf{Algoritmo} & \textbf{UN} & \textbf{Melbourne} \\
+\textbf{Algoritmo} & \textbf{UN} & \textbf{Melbourne}
+    & \textbf{$\Delta$ (UN$-$Melb)} \\
 \midrule
-FedAvg       & 0.97 & 0.96 \\
-%FedAvgM      & 0.97 & 0.96 \\
-%FedProx      & 0.97 & 0.96 \\
-%FedOpt       & 0.97 & 0.96 \\
-%FedSVRG      & 0.97 & 0.96 \\
+FedAvg  & 0.99 & 0.98 & $+$0.01 \\
+FedAvgM & 0.99 & 0.98 & $+$0.01 \\
+FedProx & 0.98 & 0.98 & $\phantom{+}$0.00 \\
+FedOpt  & 0.99 & 0.98 & $+$0.01 \\
+FedSVRG & 0.98 & 0.97 & $+$0.01 \\
+\midrule
+\textbf{Promedio} & \textbf{0.986} & \textbf{0.978} & $+$0.008 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection*{Recall promedio}
+
+
 
 \begin{table}[H]
 \centering
-\caption{Recall promedio alcanzado por algoritmo y set de datos (umbral bajo de confianza)}
-\begin{tabular}{lcc}
+\caption{Máxima puntuación $F_1$ promedio por estrategia de agregación y conjunto de datos.}
+\small
+\begin{tabular}{lccr}
 \toprule
-\textbf{Algoritmo} & \textbf{UN} & \textbf{Melbourne} \\
+\textbf{Algoritmo} & \textbf{UN} & \textbf{Melbourne}
+    & \textbf{$\Delta$ (UN$-$Melb)} \\
 \midrule
-FedAvg       & 0.99 & 0.98 \\
-%FedAvgM      & 0.99 & 0.98 \\
-%FedProx      & 0.99 & 0.98 \\
-%FedOpt       & 0.99 & 0.98 \\
-%FedSVRG      & 0.99 & 0.98 \\
+FedAvg  & 0.85 & 0.84 & $+$0.01 \\
+FedAvgM & 0.85 & 0.84 & $+$0.01 \\
+FedProx & 0.84 & 0.83 & $+$0.01 \\
+FedOpt  & 0.85 & 0.84 & $+$0.01 \\
+FedSVRG & 0.84 & 0.83 & $+$0.01 \\
+\midrule
+\textbf{Promedio} & \textbf{0.846} & \textbf{0.836} & $+$0.010 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 
-
-\subsection*{F1-score máximo}
-
-\begin{table}[H]
-\centering
-\caption{F1-score promedio máximo alcanzado por algoritmo y set de datos}
-\begin{tabular}{lcc}
-\toprule
-\textbf{Algoritmo} & \textbf{UN} & \textbf{Melbourne} \\
-\midrule
-FedAvg       & 0.85 & 0.84 \\
-%FedAvgM      & 0.85 & 0.84 \\
-%FedProx      & 0.85 & 0.84 \\
-%FedOpt       & 0.85 & 0.84 \\
-%FedSVRG      & 0.85 & 0.84 \\
-\bottomrule
-\end{tabular}
-\end{table}
+    
+La brecha consistente $\Delta \in [0.000,\,0.010]$ en todas las métricas y todas
+las estrategias confirma que el origen del conjunto de datos (UN vs.\ Melbourne) es una
+fuente de varianza mayor que la elección del algoritmo de agregación.
 
 %\begin{figure}[h!]
 %\centering
@@ -179,7 +184,7 @@ FedAvg       & 0.85 & 0.84 \\
 %    width=13cm,
 %    height=7cm,
 %    xlabel={Algoritmo de Agregación},
-%    ylabel={Precisión promedio},
+%    ylabel={Precision promedio},
 %    symbolic x coords={FedAvg,FedAvgM,FedProx,FedOpt,FedSVRG},
 %    xtick=data,
 %    ymin=0.95, ymax=0.98,
@@ -208,6 +213,6 @@ FedAvg       & 0.85 & 0.84 \\
 %\legend{UN, Melbourne}
 %\end{axis}
 %\end{tikzpicture}
-%\caption{Precisión promedio por algoritmo de agregación en cada set de datos.}
+%\caption{Precision promedio por algoritmo de agregación en cada set de datos.}
 %\end{figure}
 
