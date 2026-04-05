@@ -1,0 +1,41 @@
+\newpage
+\thispagestyle{empty}
+\chapter*{\sffamily Resumen}
+\addcontentsline{toc}{chapter}{Resumen}%
+\begin{center}
+\textbf{\large \thesisname}
+\end{center}
+\par Este trabajo de grado se enfocó en la evaluación de modelos de visión por computadora para la identificación de anotaciones, sellos y otras características en muestras herbarias. Para ello, se utilizaron dos conjuntos de datos independientes: uno proveniente del Herbario Nacional, previamente etiquetado con las anotaciones y marcas presentes en sus muestras, y otro extraído del sitio web del Herbario de Melbourne, ambos convertidos al formato COCO. Estos conjuntos de datos fueron utilizados de manera separada para evaluar el desempeño de diferentes modelos de visión por computadora.
+
+Con estos datos, se analizaron tres arquitecturas: un modelo basado en YOLO, otro en ResNet y finalmente una RCNN desarrollada desde cero. Tras una fase de experimentación y evaluación de métricas de desempeño, el modelo basado en YOLO mostró los mejores resultados en la identificación de las características de las muestras herbarias.
+
+Posteriormente, se diseñó una arquitectura de aprendizaje federado, permitiendo entrenar el modelo de manera distribuida sobre ambos conjuntos de datos sin necesidad de fusionarlos en un solo archivo. Este enfoque posibilita la integración de información desde distintos herbarios alrededor del mundo sin compartir directamente los datos, asegurando privacidad y eficiencia en la curaduría automatizada de muestras herbarias. Como resultado, se obtuvo una herramienta escalable y adaptable que facilita la extracción y gestión de información en colecciones botánicas digitales.
+\\[2cm]
+\textbf{Palabras clave:} \palabrasclave
+
+\newpage
+\thispagestyle{empty}
+\chapter*{\sffamily Abstract}
+\addcontentsline{toc}{chapter}{Abstract}%
+\begin{center}
+\textbf{\large \thesisnameeng}
+\end{center}
+\par This thesis focused on evaluating computer vision models for identifying annotations, stamps, and other features in herbarium specimens. For this purpose, two independent datasets were used: one from the National Herbarium, previously labeled with annotations and marks present in its specimens, and another extracted from the Melbourne Herbarium website, both converted into COCO format. These datasets were used separately to assess the performance of different computer vision models.
+
+Using these datasets, three architectures were analyzed: a model based on YOLO, another based on ResNet, and finally an RCNN developed from scratch. After an experimentation phase and performance metric evaluation, the YOLO-based model demonstrated the best results in identifying features within the herbarium specimens.
+
+Subsequently, a federated learning architecture was designed, enabling distributed model training across both datasets without the need to merge them into a single file. This approach facilitates the integration of information from different herbaria worldwide without directly sharing data, ensuring privacy and efficiency in the automated curation of herbarium specimens. As a result, a scalable and adaptable tool was developed to support information extraction and management in digital botanical collections.
+\\[2cm]
+\textbf{Keywords:} \keywords
+
+%Usar si es requerido, de no necesitarse favor comentar con % las lineas
+%\newpage 
+%\thispagestyle{empty}
+%\chapter*{\sffamily Zusammenfassung}
+%\addcontentsline{toc}{chapter}{Zusammenfassung}%
+%\begin{center}
+%\textbf{\large \thesisnamelang}
+%\end{center}
+%\par Zusammenfassung Texte.
+%\\[2cm]
+%\textbf{Schlüsselwörter:} \schlusselworter

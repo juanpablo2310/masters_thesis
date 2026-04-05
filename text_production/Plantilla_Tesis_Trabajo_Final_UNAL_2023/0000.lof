@@ -1,0 +1,16 @@
+\babel@toc {spanish}{}\relax 
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {\textbf {3-1}}{\ignorespaces Arquitectura de YOLO: salida de predicciones a partir de una única pasada de la imagen}}{12}{figure.caption.7}%
+\contentsline {figure}{\numberline {\textbf {3-2}}{\ignorespaces Esquema general del detector SSD con predicciones desde múltiples escalas}}{13}{figure.caption.8}%
+\contentsline {figure}{\numberline {\textbf {3-3}}{\ignorespaces Distribución de etiquetas para los sets de datos}}{14}{figure.caption.9}%
+\contentsline {figure}{\numberline {\textbf {3-4}}{\ignorespaces Arquitectura de un modelo de aprendizaje federado}}{16}{figure.caption.10}%
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {\textbf {4-1}}{\ignorespaces Overview of the six model outputs.}}{20}{figure.caption.11}%
+\contentsline {figure}{\numberline {\textbf {4-2}}{\ignorespaces Overview of the six model outputs.}}{21}{figure.caption.12}%
+\contentsline {figure}{\numberline {\textbf {4-3}}{\ignorespaces Comparación de mAP@0.5 promedio por algoritmo de agregación y set de datos.}}{22}{figure.caption.13}%
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\contentsfinish 

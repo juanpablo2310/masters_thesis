@@ -1,0 +1,115 @@
+\par Durante la escritura se pueden requerir algunas cosas sencillas que facilitan la tarea y que pueden constituir trucos de uso:
+\subsection{Insertar comentarios}
+\par Insertar comentarios en \LaTeX es muy sencillo, para comentar código se usa el signo de porcentaje \textbf{\%}.
+\begin{minted}{latex}
+% Esta linea no se compila en el documento, está comentada
+\end{minted}
+\par Los comentarios pueden servir para hacer anotaciones, anular segmentos de código que no se desean borrar del documento; pero que tampoco deben aparecer en el texto terminado, etc.
+\pagebreak
+\subsection{Dar formato a los capítulos y secciones}
+\par Para dar formato a los capítulos se sigue esta estructura:
+\begin{minted}{latex}
+\chapter{Nombre del Capítulo} 
+% Capitulo, división de primer orden en el texto
+\chapter*{Nombre} 
+% Capitulo requerido en el texto pero que no debe aparecer en la Tabla de Contenido
+\section{Nombre} 
+% Sección del capitulo, división de segundo orden
+\section*{Nombre}
+% Sección requerida en el texto pero que no debe aparecer en la Tabla de Contenido
+\subsection{Nombre} 
+% Subsección de una sección de un capitulo, división de tercer orden
+\subsubsection{Nombre} 
+% Subsección de una subsección, división de cuarto orden
+\paragraph{Nombre} 
+% Puede tomarse como división de quinto orden o para resaltar información importante
+\end{minted}
+\par La ventaja de \LaTeX respecto a otros procesadores de texto como Word, es que el proceso de numeración se realiza de \textbf{forma automática} mientras se compila el documento, por lo tanto, el usuario no debe preocuparse de que se altere de forma impredecible la numeración asignada. Esto aplica a capítulos, figuras, tablas, ecuaciones, etc.
+\par Para escribir los párrafos se escribe normalmente el texto, pero se puede generar el espaciado automático usando el comando \mintinline{latex}{\par}
+\begin{minted}{latex}
+\par 
+% Se debe colocar antes de la primera palabra del parrafo y separada con un espacio sencillo
+\end{minted}
+\par Este comando ya genera el espaciado entre los párrafos, acorde con lo establecido en el documento \textbf{0000.tex}
+\section{Entornos comunes}
+\par Para la inserción de tablas, figuras, gráficas, listados, entre otras, \LaTeX usa un conjunto de códigos que se denominan \textbf{entornos}. Estos entornos tienen como característica básica que poseen una etiqueta de inicio y una etiqueta de cierre que suelen llevar la sintaxis: \mintinline{latex}{\begin{} ... \end{}}.
+\par Mientras que las imágenes y las tablas pueden ir dentro o fuera de entornos según se requiera, otros elementos como listados, cambios de orientación o de alineación, necesariamente deben tener las etiquetas de apertura o de cierre.
+\subsection{Insertar imágenes}
+\par Para insertar imágenes en el texto se tienen dos alternativas, la primera es la inserción de solo la imagen, esto se hace con el comando \mintinline{latex}{\includegraphics[]{}}.
+\begin{minted}{latex}
+% Opción 1 - Inserción simple de una imagen 
+\includegraphics[Parámetros de la imagen]{Fuente o lugar de la imagen}
+% Algunos parámetros útiles que se usan en el recuadro [Parámetros] son:
+% scale=Valor entre 0 y 1, la imagen se proporciona basada en el archivo original
+% \textwidth, la imagen queda con un ancho máximo igual al que tiene el texto
+% Esta imagen no va a quedar registrada en el listado de figuras de la plantilla
+\end{minted}
+\par Para insertar una Figura que si deba aparecer en el listado de figuras de esta plantilla se debe invocar el entorno \textbf{figure}. (\mintinline{latex}{\begin{figure} ... \end{figure}})
+\begin{minted}{latex}
+% Opción 2 - Inserción de una Figura que SI debe estar en la Tabla de Contenido
+\begin{figure}[ht]
+    % Usar [ht] (here, top) esto coloca la tabla en la ubicación donde se solicita
+    % O en su defecto en la parte superior de la siguiente página (top)
+    \centering
+    \includegraphics{} % Mismo comando del caso anterior
+    \caption[Titulo de la figura abreviado]{Titulo extendido de la figura}
+    % El nombre abreviado de la tabla se ve en la Lista de Figuras
+    % El nombre extendido de la tabla se ve en el texto del documento
+    \label{fig:Etiqueta} 
+    % Etiqueta de la figura, permite citarla en el texto usando \ref{fig:Etiqueta}
+    % La etiqueta es definida por el usuario y DEBE ser única
+\end{figure}
+\end{minted}
+\par Se sugiere usar la carpeta \textbf{00Figuras} para almacenar las imágenes
+\subsection{Insertar tablas}
+\par Al igual que para las imágenes, las tablas se pueden insertar solas usando el entorno \textbf{tabular}, o también insertarlas de forma que se registren en el Listado de Tablas del documento, en ese caso se usa el entorno \textbf{table} (\mintinline{latex}{\begin{table} ... \end{table}}), que a su vez contiene al entorno \mintinline{latex}{\begin{tabular} ... \end{tabular}}
+\begin{minted}{latex}
+% Opción 1: Insertar una tabla sencilla con tabular
+\begin{tabular}{c|c} %Tabla de 2 x 2 con texto centrado
+   Celda 1-1 & Celda 1-2  \\
+   Celda 2-1 & Celda 2-2
+\end{tabular}
+% Opción 2: Insertar una Tabla que quede en la Lista de Tablas del documento
+\begin{table}[ht] 
+% Usar [ht] (here, top) esto coloca la tabla en la ubicación donde se solicita
+% O en su defecto en la parte superior de la siguiente página (top)
+    \centering % Formato centrado 
+    \begin{tabular}{l|r} 
+    % Tabla 2 x 2 Texto a la Izquierda Columna 1, Derecha Columna 2 
+         &  \\
+         & 
+    \end{tabular}
+    \caption[Nombre abreviado de la Tabla]{Nombre extendido de la tabla}
+    % El nombre abreviado de la tabla se ve en la Lista de Tablas
+    % El nombre extendido de la tabla se ve en el texto del documento
+    \label{tab:Etiqueta}
+    % Etiqueta de la tabla, permite citarla en el texto usando \ref{tab:Etiqueta}
+    % La etiqueta es definida por el usuario y DEBE ser única
+\end{table}
+\end{minted}
+\par Se sugiere usar la carpeta \textbf{00Tablas} para almacenar las tablas, en especial aquellas que sean muy grandes o tengan códigos complicados.
+\par Para generar las tablas se puede usar herramientas como \href{https://www.tablesgenerator.com/}{Table Generator}, que permiten copiar directamente desde Word o Excel.
+\subsection{Insertar listados}
+\par Una opción muy útil en cualquier texto es insertar listados, esto se hace con dos entornos. \textbf{enumerate} para listas numeradas e \textbf{itemize} para listados de categorías (sin numerar)
+\par Una lista sin números usando el entorno \mintinline{latex}{\begin{itemize} ... \end{itemize}} 
+\begin{myverbatim}
+\begin{itemize}
+    \item Primer elemento de la lista
+    \item Segundo elemento de la lista
+\end{itemize}
+\end{myverbatim}
+\par Una lista sin números usando el entorno \mintinline{latex}{\begin{enumerate} ... \end{enumerate}} 
+\begin{myverbatim}
+\begin{enumerate}
+    \item Primer elemento de la lista
+    \item Segundo elemento de la lista
+    \item Agregar tantos elementos como se requiera
+\end{enumerate}
+\end{myverbatim}
+\section{Información Adicional}
+\par Si buscas conocer más información de como esta estructurado \LaTeX se recomienda ver los siguientes recursos:
+\begin{itemize}
+    \item \cite{DeCastroKorgi2010} - El Universo \LaTeX - Facultad de Ciencias - Universidad Nacional de Colombia
+    \item \href{https://users.monash.edu.au/~anam/webcurso/curso_archivos/LaTeX/2EstructuraEdicion.pdf}{Estructura y Texto en \LaTeX}
+    \item \href{https://www.overleaf.com/learn/how-to/Creating_a_document_in_Overleaf}{Cómo crear un documento en Overleaf}
+\end{itemize}

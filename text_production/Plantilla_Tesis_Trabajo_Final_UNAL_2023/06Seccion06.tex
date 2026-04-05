@@ -1,0 +1,7 @@
+\chapter{Conclusiones}
+
+A partir del análisis de estas curvas, se concluye que el modelo YOLO presenta un rendimiento excelente para la mayoría de las clases evaluadas, en particular para elementos visualmente distintivos como los códigos QR o los color checkers, cuya estructura visual es clara y constante. El rendimiento general del modelo, con un mAP@0.5 de 0.886, respalda su capacidad para ser utilizado en aplicaciones prácticas sobre imágenes de herbario.
+
+Sin embargo, el modelo presenta claras debilidades en la detección de encabezados. Esta clase muestra valores significativamente inferiores en todas las métricas analizadas, lo cual podría deberse a una baja representación en el conjunto de entrenamiento, anotaciones inconsistentes o alta variabilidad en la forma y posición de los encabezados. Se recomienda reforzar esta clase mediante aumento de datos, curación manual de etiquetas o incorporación de mecanismos de atención espacial más refinados.
+
+Finalmente, el umbral de confianza óptimo para uso práctico se encuentra alrededor de 0.275, permitiendo maximizar el F1-score sin sacrificar demasiada precisión ni recall. Este valor puede utilizarse como referencia para despliegues iniciales, aunque idealmente se debería ajustar dinámicamente según el caso de uso y las prioridades específicas (por ejemplo, minimizar falsos negativos o falsos positivos).

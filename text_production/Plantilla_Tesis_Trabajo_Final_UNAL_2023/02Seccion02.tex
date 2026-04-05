@@ -1,0 +1,69 @@
+\chapter{Estado del Arte}%Estado del arte
+
+La identificacion de objetos en imagenes es un problema que data de mediados del siglo XX y central para el trabajo que se presenta. Esta disciplina a sido testigo de grandes transformaciones pasando desde los metodos de deteccion basados en el calculo, la continuidad de funciones y extrictos metodos de extraccion de caracteristicas a modelos de aprendizaje profundo mas flexibles y capaces de reconocer mas estructuras y clasificarlas agilmente. A continuacion se dara una muy breve introduccion y recuento de los avances mas importantes en el campo que hacen posible la creacion de un modelo de aprendizaje profundo para la identificacion de objetos en imagenes
+
+
+
+%\section{Introducción a la Identificación de Objetos en Imágenes}
+
+%La identificación de objetos en imágenes ha sido un problema central en el campo de la visión por computadora desde sus inicios. Antes del auge del aprendizaje profundo, las metodologías se basaban en el diseño de algoritmos explícitos para la detección y reconocimiento de objetos a través de técnicas de procesamiento de imágenes y aprendizaje automático clásico (Szeliski, 2010). Estos primeros enfoques presentaban limitaciones en su capacidad de generalización y robustez ante variaciones en iluminación, perspectiva y oclusiones.
+
+%La visión por computadora ha evolucionado significativamente desde sus inicios en la década de 1960, cuando los primeros intentos se basaban en la aplicación de reglas explícitas y métodos algorítmicos básicos para interpretar imágenes digitales. A lo largo del tiempo, el campo ha experimentado avances revolucionarios impulsados por el crecimiento en capacidad de cómputo, la disponibilidad de grandes volúmenes de datos y el desarrollo de técnicas de aprendizaje profundo.
+
+\section{Primeras Aproximaciones en la Identificación de Objetos}
+
+\subsection{Algoritmos Basados en Características Heurísticas}
+
+Los primeros métodos para la detección de objetos se basaban en la extracción de características mediante algoritmos de procesamiento de imágenes, tales como la detección de bordes con Canny y operadores diferenciales como Sobel \cite{Canny1986}. Estos métodos eran efectivos para detectar contornos, pero no permitían una identificación precisa de objetos en entornos complejos. Esta fue la genesis del campo de procesamiento de imagenes que si bien muy novedoso para su momento carecía de la suficiente robustez para poder ser una solucion general a la deteccion de objetos en una imagen 
+
+\subsection{Extracción de Características Locales}
+
+Métodos como SIFT (Scale-Invariant Feature Transform) \cite{Lowe2004}  y SURF (Speeded-Up Robust Features) \cite{Bay2008}  permitieron identificar puntos clave en imágenes y construir descriptores invariables a escala y rotación. Estos enfoques fueron ampliamente utilizados en tareas como la detección de rostros y reconocimiento de objetos.
+
+\subsection{Modelos de Aprendizaje Automático Clásico}
+
+Para la clasificación de objetos, se emplearon modelos como las Máquinas de Soporte Vectorial (SVM) y los Random Forests, en combinación con descriptores de imágenes como HOG (Histogram of Oriented Gradients) \cite{Dalal2005}. Estos métodos fueron efectivos en entornos controlados, pero su capacidad de generalización era limitada cuando se enfrentaban a conjuntos de datos complejos.
+
+\section{Evolución Hacia el Aprendizaje Profundo}
+
+El avance en capacidad de cálculo y la disponibilidad de grandes volúmenes de datos impulsaron el desarrollo de Redes Neuronales Convolucionales (CNNs), lo que marcó un cambio fundamental en la identificación de objetos \cite{Goodfellow2016}.
+
+\subsection{Arquitectura de las CNNs}
+
+Las CNNs introdujeron el concepto de capas convolucionales, las cuales permiten extraer representaciones jerárquicas de las imágenes sin requerir ingeniería manual de características. Una CNN típica está compuesta por:
+
+Capas Convolucionales: Aplican filtros para extraer características locales de la imagen.
+
+Capas de Pooling: Reducen la dimensionalidad y aumentan la invarianza a traslaciones.
+
+Capas Fully Connected: Combinan la información extraída para la clasificación final.
+
+Modelos como AlexNet \cite{Krizhevsky2012}  demostraron la capacidad de las CNNs para superar a los métodos tradicionales en clasificación de imágenes.
+
+\subsection{Avances en la Identificación de Objetos}
+
+Arquitecturas posteriores mejoraron la eficiencia y precisión de las CNNs:
+
+VGGNet \cite{Simonyan2014}: Profundizó la red con capas convolucionales de tamaño 3x3.
+
+ResNet \cite{He2016}: Introdujo bloques residuales para permitir el entrenamiento de redes profundas sin degradación del gradiente.
+
+YOLO (You Only Look Once) \cite{Redmon2016}: Permitía detección en tiempo real dividiendo la imagen en cuadrículas y realizando predicciones en una sola pasada.
+
+Faster R-CNN \cite{Ren2015}: Mejoró la detección de objetos mediante una red de propuestas de regiones (RPN).
+
+\section{Trade-offs en Modelos de Visión por Computadora}
+
+El diseño y selección de modelos de visión por computadora implican múltiples trade-offs dependiendo de la aplicación:
+	•	Precisión vs. Velocidad: Modelos como Faster R-CNN ofrecen alta precisión en la detección de objetos, pero a expensas del tiempo de inferencia, mientras que YOLO y SSD priorizan la velocidad con una ligera pérdida de precisión.
+	•	Cantidad de Datos vs. Capacidad de Generalización: Modelos grandes requieren datasets extensos para evitar sobreajuste. Sin embargo, técnicas como Transfer Learning y Fine-Tuning han permitido el uso de modelos preentrenados en dominios con datos limitados.
+	•	Consumo Computacional vs. Aplicabilidad en Dispositivos Embebidos: Redes más profundas como EfficientNet ofrecen un mejor balance entre eficiencia y precisión, haciéndolas viables para aplicaciones en dispositivos con recursos limitados.
+
+\section{Visión por Computadora en el Aprendizaje Federado}
+
+Para la construcción de un algoritmo capaz de procesar los diferentes elementos en las muestras de diferentes herbarios es necesario considerar una arquitectura de sistema innovadora pensada por primera vez en google con la meta de mantener los procesos de entrenamiento desacoplados y privados es decir sin tener que mover los bancos de datos de su repositorio origen hacia alguna otra locación, esta arquitectura se conoce como estructura federada.
+
+En aplicaciones donde los datos se encuentran distribuidos en diferentes ubicaciones y existen restricciones de privacidad, el aprendizaje federado ha emergido como una solución innovadora. Este paradigma permite entrenar modelos de visión por computadora en múltiples dispositivos o servidores sin necesidad de compartir los datos localmente. Algoritmos como FedAvg permiten la agregación de modelos entrenados en nodos descentralizados, mejorando la seguridad y privacidad del proceso de aprendizaje.
+
+El uso del aprendizaje federado en visión por computadora abre nuevas oportunidades en sectores como la salud, la seguridad y la gestión de datos científicos, incluyendo su aplicación en herbarios digitales para la curaduría automatizada de muestras botánicas.
+

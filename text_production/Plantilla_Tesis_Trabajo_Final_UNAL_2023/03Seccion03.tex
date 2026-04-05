@@ -1,0 +1,376 @@
+
+
+\chapter{Materiales y Metodos:}
+
+%Para este proyecto la principal herramienta tecnológica sera Python y en partículas se utilizaran las librerías TensorFlow, Pytorch y Ultralytics para la implementación de modelos de visión por computador , el esquema de entrenamiento y la evaluación he implementación de la herramienta. los entrenamientos y evaluaciones se realizaron en un computador personal y por medio de la plataforma google colab
+
+
+\section{Recolección de Datos}
+
+Para este trabajo se utilizaron dos set de datos, el set de datos proporcionado por el herbario de la Universidad Nacional de Colombia consta de 987 muestras proporcionadas por la directora del herbario la doctora Lauren Raz, el juego de datos digitalizado a resolución de $500 \times 720$ pixeles y debidamente etiquetado en formato COCO \cite{COCOdataset} por estudiantes de pregrado estos fueron almacenados en formato jpeg. estas muestras digitalizadas se toman como parte de los protocolos de conservación propios del herbario 
+
+\textbf{Explicar como fue el protocolo de anotación: 1) Que caracteristicas se anotaron y por que, 2) Como se realizó la anotación, polionos cuadrados etc, que etiquetas se consideraron y por que 3) Quien específicamente realizo las anotaciones, y que consideraciones realizó para las anotaciones
+
+Incluir un ejemplo de la anotación realizada por un humano}
+
+El otro set de datos trabajado fue proporcionado por la Universidad de Melbourne la cual cuenta con su colección de acceso libre \cite{SetMelu}. Se construyo una herramienta de scrapeo para descargar de manera automática todas las 3240 muestras en el mismo formato jpeg y resolución de $820 \times 1200$. Luego se procedió a proceso de etiquetado bajo el mismo formato COCO, para ello se transformo las etiquetas que fueron proporcionadas como metadata  , el cambio consistio en mover el punto de referencia para cada bounding box del centro a la esquina superior izquierda.  
+
+\textbf{Describir lo mismo!! para esta DB, la descripción debe ser lo suficientemente detallada para que otra persona lo pueda reproducir}
+
+Incluir un ejemplo de la anotación realizada por un humano para este dataset}
+
+\textbf{HAY QUE EXPLICAR EL MODELO FEDERADO UTILIZADO, CON SU FORMULACIÓN MATEMATICA. EXPLICAR BIEN COMO SE INTEGRAN LOS MODELOS. EXPLICAR EN EL CONTEXTO COMO SE INTEGRAN LOS MODELOS}
+
+\textbf{EXPLICAR COMO SE DISEÑO EL EXPERIMENTO: MEDIDAS DE DESEMPEÑO Y POR QUE, PARTICION DE LOS DATOS}
+
+
+\section{Modelos :}
+
+\textbf{ESTO HAY QUE PASARLO A UNA SECCIÓN DE FUNDAMENTALS O MARCO TEORICO, HAY QUE DARLE UN TRATAMIENTO MÁS PROFUNDO EN EL SENTIDO MATEMATICO}
+
+\subsection{Componentes Fundamentales de una CNN}
+
+\textbf{TODO ESTO HAY QUE EXPLICARLO EN PROFUNDIDAD}
+
+Dentro de los componentes que hacen parte de los modelos de aprendizaje automático las capaz de la red son aquellas que hacen las transiciones y manipulaciones a la señal por lo que se va a hacer una muy breve caracterización de las mismas para posteriormente hacer una revisión de las arquitecturas de algoritmos. 
+
+Las redes neuronales convolucionales (CNN, por sus siglas en inglés) constituyen una arquitectura ampliamente utilizada en el aprendizaje profundo debido a su capacidad para extraer representaciones jerárquicas de los datos de entrada. Su estructura se compone de diferentes tipos de capas, cada una de las cuales desempeña un papel específico en el proceso de transformación de la información. A continuación, se describen sus componentes principales.  
+
+\subsection*{Capa Convolucional}  
+La operación de convolución es el núcleo de una CNN y permite la extracción de patrones locales a través del uso de filtros o \textit{kernels}. Formalmente, dado un tensor de entrada \(X\) y un filtro \(W \in \mathbb{R}^{k \times k}\), el mapa de activaciones \(A\) se define como:  
+
+\[
+A_{i,j} = \sum_{m=1}^{k} \sum_{n=1}^{k} W_{m,n} \, X_{i+m,\, j+n} + b,
+\]  
+
+donde \(b\) representa un sesgo asociado al filtro. Esta operación facilita la identificación de estructuras espaciales, tales como bordes y texturas en imágenes.  
+
+\subsection*{Función de Activación}  
+Con el propósito de introducir no linealidad en el modelo, se emplean funciones de activación. Entre las más utilizadas se encuentra la \textit{Rectified Linear Unit} (ReLU), definida como:  
+
+\[
+f(x) = \max(0, x).
+\]  
+
+El uso de esta función ha demostrado mejorar la eficiencia del entrenamiento y mitigar problemas asociados al desvanecimiento del gradiente.  
+
+\subsection*{Capa de Pooling}  
+El \textit{pooling} constituye una operación de reducción de dimensionalidad que conserva la información más relevante, disminuye la carga computacional y contribuye a la invariancia traslacional. La técnica más habitual es el \textit{max pooling}, expresada de la siguiente manera:  
+
+\[
+Y_{i,j} = \max_{(m,n) \in \Omega} X_{i+m,\, j+n},
+\]  
+
+donde \(\Omega\) representa una región local predefinida.  
+
+\subsection*{Capa de Normalización}  
+En muchas arquitecturas modernas se incorpora la \textit{Batch Normalization} (BN), cuyo objetivo es normalizar las activaciones intermedias, estabilizando la distribución de los datos a lo largo del entrenamiento. Esto se traduce en una mayor rapidez de convergencia y en una reducción del riesgo de sobreajuste.  
+
+\subsection*{Capa Completamente Conectada}  
+Las capas totalmente conectadas se emplean en las etapas finales de la red para combinar las características extraídas y generar una representación de dimensión fija. Matemáticamente, si \(z \in \mathbb{R}^d\) corresponde al vector de entrada, la transformación se define como:  
+
+\[
+y = Wz + b,
+\]  
+
+donde \(W \in \mathbb{R}^{k \times d}\) y \(b \in \mathbb{R}^k\). Este tipo de capa es especialmente relevante en tareas de clasificación.  
+
+\subsection*{Capa de Salida}  
+Finalmente, en problemas de clasificación multiclase, la capa de salida suele implementar la función \textit{softmax}, la cual transforma los valores obtenidos en probabilidades normalizadas:  
+
+\[
+\hat{y}_i = \frac{e^{z_i}}{\sum_{j=1}^C e^{z_j}}, \quad i = 1, \dots, C,
+\]  
+
+donde \(C\) denota el número de clases. Esta formulación garantiza que las predicciones de la red se interpreten como distribuciones de probabilidad sobre el espacio de categorías posibles.  
+
+
+\subsection{Flujo de Datos en una CNN}
+
+El flujo general en una CNN se puede resumir como:
+
+\begin{center}
+\texttt{Input} $\rightarrow$ \texttt{[Conv + ReLU + Pool]}$^n$ $\rightarrow$ \texttt{Flatten} $\rightarrow$ \texttt{FC Layers} $\rightarrow$ \texttt{Output}
+\end{center}
+%
+%\section{Ejemplo de Arquitectura CNN}
+
+%A continuación se presenta un diagrama simplificado de una CNN típica:
+
+%\begin{figure}[H]
+%\centering
+%\begin{tikzpicture}[node distance=1cm and 0.5cm, every node/.style={scale=0.8}]
+%\tikzset{layer/.style={rectangle, draw, minimum width=2.5cm, minimum height=1cm}}
+
+% Primera fila
+%\node[layer] (input) {Imagen de entrada};
+%\node[layer, right=of input] (conv1) {Conv + ReLU};
+%\node[layer, right=of conv1] (pool1) {Max Pool};
+%\node[layer, right=of pool1] (conv2) {Conv + ReLU};
+
+% Segunda fila
+%\node[layer, below=of conv1] (pool2) {Max Pool};
+%\node[layer, right=of pool2] (flatten) {Flatten};
+%\node[layer, right=of flatten] (fc1) {FC + ReLU};
+%\node[layer, right=of fc1] (fc2) {FC + Softmax};
+%\node[right=of fc2] (output) {Clasificación};
+
+% Flechas primera fila
+%\draw[->] (input) -- (conv1);
+%\draw[->] (conv1) -- (pool1);
+%\draw[->] (pool1) -- (conv2);
+
+% Flechas hacia segunda fila
+%\draw[->] (conv2.south) |- (pool2.north);
+
+% Flechas segunda fila
+%\draw[->] (pool2) -- (flatten);
+%\draw[->] (flatten) -- (fc1);
+%\draw[->] (fc1) -- (fc2);
+%\draw[->] (fc2) -- (output);
+
+%\end{tikzpicture}
+%\caption{Diagrama de flujo de una CNN básica ajustado al ancho de la hoja}
+%\end{figure}
+
+\subsection{Arquitecturas Populares}
+
+En esta sección se presenta una revisión cronológica de las arquitecturas más influyentes en la evolución de las redes convolucionales. Cada una de ellas representó un avance significativo en el campo del aprendizaje profundo y contribuyó al desarrollo de modelos más eficientes y precisos. Finalmente, se hace énfasis en las arquitecturas modernas de detección de objetos, dado que serán empleadas en el presente trabajo para la extracción y análisis de características en las muestras.  
+
+\subsubsection{LeNet-5}  
+Propuesta por LeCun et al., LeNet-5 constituye una de las primeras implementaciones exitosas de redes convolucionales, aplicada al reconocimiento de dígitos manuscritos en la base de datos MNIST. Su arquitectura se caracteriza por la combinación secuencial de capas convolucionales, funciones de activación y operaciones de \textit{pooling}, seguida de capas totalmente conectadas.  
+
+\begin{itemize}
+    \item Entrada: $32 \times 32$
+    \item Conv(6 filtros, $5 \times 5$) $\rightarrow$ ReLU $\rightarrow$ Pool
+    \item Conv(16 filtros, $5 \times 5$) $\rightarrow$ ReLU $\rightarrow$ Pool
+    \item FC(120) $\rightarrow$ FC(84) $\rightarrow$ Softmax(10)
+\end{itemize}
+
+\subsubsection{AlexNet}  
+Introducida por Krizhevsky et al. y ganadora del desafío ILSVRC 2012, AlexNet supuso un punto de inflexión en el aprendizaje profundo aplicado a visión por computadora. Esta arquitectura popularizó el uso de la función ReLU, técnicas de regularización como \textit{dropout} y el entrenamiento eficiente en unidades de procesamiento gráfico (GPU), lo que permitió entrenar redes más profundas y con mayor capacidad de generalización.  
+
+\subsubsection{VGGNet}  
+Propuesta por Simonyan y Zisserman, VGGNet destacó por el uso sistemático de filtros convolucionales de tamaño reducido ($3 \times 3$) y por su considerable profundidad (hasta 19 capas). Esta arquitectura demostró que la profundidad de la red es un factor clave para mejorar la capacidad de representación, a costa de un mayor requerimiento computacional.  
+
+\subsubsection{ResNet}  
+He et al. introdujeron las redes residuales (ResNet), cuyo aporte principal consiste en la incorporación de conexiones de atajo o \textit{skip connections}. Estas permiten que el flujo del gradiente se mantenga estable durante el entrenamiento de redes profundas, mitigando el problema del desvanecimiento del gradiente. El bloque residual se formaliza como:  
+
+\[
+\mathbf{y} = \mathcal{F}(\mathbf{x}, \{W_i\}) + \mathbf{x},
+\]  
+
+donde \(\mathcal{F}(\cdot)\) representa la transformación aprendida por las capas intermedias y \(\mathbf{x}\) la entrada original al bloque.  
+
+\subsubsection{YOLO (You Only Look Once)}  
+YOLO, propuesto por Redmon et al., reformuló la detección de objetos como un problema de regresión directa desde píxeles a coordenadas y categorías, eliminando el esquema de múltiples etapas característico de modelos como R-CNN. Esta aproximación permitió alcanzar detección en tiempo real sin sacrificar precisión.  
+
+\begin{itemize}
+    \item La imagen de entrada se divide en una grilla de $S \times S$ celdas.
+    \item Cada celda predice $B$ \emph{bounding boxes} y la probabilidad de pertenencia a cada clase.
+    \item La salida final posee dimensiones $S \times S \times (B \cdot 5 + C)$, donde:
+    \[
+    5 = (x, y, w, h, \text{confianza}), \quad C = \text{número de clases}.
+    \]
+\end{itemize}
+
+Versiones más recientes, como YOLOv3 y YOLOv5, incorporan arquitecturas \textit{backbone} profundas (Darknet, CSPDarknet) y predicciones a múltiples escalas, lo que mejora significativamente el desempeño en la detección de objetos pequeños.  
+
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{00Figuras/yolo_architecture_diagram.png}
+\caption{Arquitectura de YOLO: salida de predicciones a partir de una única pasada de la imagen}
+\end{figure}
+
+\subsubsection{SSD (Single Shot MultiBox Detector)}  
+SSD constituye otra arquitectura de detección de objetos en una sola etapa. Utiliza una red convolucional base (comúnmente VGG-16) a la que se añaden capas convolucionales adicionales para realizar predicciones de cajas delimitadoras y clases a distintas escalas.  
+
+\begin{itemize}
+    \item Las predicciones se generan desde múltiples capas, permitiendo detectar objetos de diferentes tamaños.  
+    \item Cada posición de la característica predice múltiples cajas con distintas relaciones de aspecto.  
+    \item Se utilizan \emph{default boxes} (anclas predefinidas) en cada celda, que luego se ajustan mediante offsets aprendidos.  
+\end{itemize}
+
+La función de pérdida de SSD combina los errores de clasificación y de regresión de las cajas delimitadoras:  
+
+\[
+\mathcal{L}(x, c, l, g) = \frac{1}{N} \left( \mathcal{L}_{\text{conf}}(x, c) + \alpha \mathcal{L}_{\text{loc}}(x, l, g) \right),
+\]  
+
+donde:  
+
+\begin{itemize}
+    \item $\mathcal{L}_{\text{loc}}$: pérdida de regresión para la caja.  
+    \item $\mathcal{L}_{\text{conf}}$: pérdida de entropía cruzada para las clases.  
+    \item $x$: asignaciones positivas (correspondencia entre \textit{default boxes} y el \textit{ground truth}).  
+    \item $N$: número de coincidencias positivas.  
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{00Figuras/Single-Shot-Detector-SSD-architecture.jpg}
+\caption{Esquema general del detector SSD con predicciones desde múltiples escalas}
+\end{figure}
+
+\section{Métodos :}
+
+El etiquetado de las muestras para ambos set de datos se encontraba disponible con las muestras, el formato para estos estas etiquetas fueron ajustadas bajo el protocolo COCO, a continuación se puede apreciar la distribución de etiquetado sobre la totalidad de las muestras para cada set de datos, esto se hizo con la intención de estudiar la mejor distribución para el entrenamiento, esto se logro seleccionando el $70\%$ para cada set es decir 691 imágenes para el set UNAL y 2268 imagenes para el ser de Melbourne asegurándose que todas aquellas clases que están subrepresentadas sean incluidas en su totalidad en el set de entrenamiento ademas de incluir copias (data augmentation) para el label \textit{small database label} del set de Melbourne. En promedio se tenían 5 labels por muestra por lo que se contaron con un total de 14800 muestras de entrenamiento para el modelo.
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{00Figuras/distributionLabelsUn.png}
+        \caption{Distribución de etiquetas set UN}
+        \label{fig:imagen1}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{00Figuras/distribucionLabelsMelu.png}
+        \caption{Distribución de etiquetas set Melbourne}
+        \label{fig:imagen2}
+    \end{subfigure}
+    \caption{Distribución de etiquetas para los sets de datos}
+    \label{fig:imagenes}
+\end{figure}
+
+
+
+Luego se procedió con proceso de selección de la arquitectura apropiada, para esto se realizaron los respectivos entrenamientos por cada modelo y se calculo medidas de confiabilidad y precisión sobre las predicciones del modelo, las métricas en concreto estudiadas son : 
+
+\subsection{Recall}
+El \textbf{Recall} mide la capacidad del modelo para identificar correctamente las instancias positivas. Se define como:
+
+\begin{equation}
+\text{Recall} = \frac{TP}{TP + FN}
+\end{equation}
+
+donde:
+\begin{itemize}
+    \item $TP$ (True Positives) son los casos positivos correctamente clasificados.
+    \item $FN$ (False Negatives) son los casos positivos que el modelo clasificó incorrectamente como negativos.
+\end{itemize}
+
+\subsection{Confianza}
+La \textbf{Confianza} en una predicción representa la probabilidad estimada de que la clasificación del modelo sea correcta. Para una clase $c$, se expresa como:
+
+\begin{equation}
+\text{Confianza}(c) = P(y=c \mid x)
+\end{equation}
+
+donde $P(y=c \mid x)$ es la probabilidad predicha por el modelo de que la instancia $x$ pertenezca a la clase $c$.
+
+\subsection{F1-score}
+El \textbf{F1-score} es la media armónica entre precisión y recall, proporcionando un balance entre ambos:
+
+\begin{equation}
+F1 = 2 \cdot \frac{\text{Precisión} \cdot \text{Recall}}{\text{Precisión} + \text{Recall}}
+\end{equation}
+
+donde:
+\begin{equation}
+\text{Precisión} = \frac{TP}{TP + FP}
+\end{equation}
+\begin{equation}
+\text{Recall} = \frac{TP}{TP + FN}
+\end{equation}
+
+\subsection{Mean Average Precision (mAP)}
+La \textbf{Mean Average Precision (mAP)} es una métrica utilizada en tareas de detección de objetos. Se calcula como el promedio de la precisión a diferentes valores de recall:
+
+\begin{equation}
+mAP = \frac{1}{N} \sum_{i=1}^{N} AP_i
+\end{equation}
+
+donde $AP_i$ es el área bajo la curva de precisión-recall para la clase $i$ y $N$ es el número total de clases.
+
+Una vez consideradas estas métricas y con el modelo que mejor se adapte a nuestras necesidades se construyo la arquitectura necesaria para un esquema federado , la cual consiste de un servidor en donde se compilan los pesos de los diferentes modelos desplegados en los clientes, en esta sección se experimento con los principales algoritmos de agregación para el modelo general los cuales son :
+
+\section{Modelo Federado}
+
+La inteligencia artificial con arquitectura federada surge como una respuesta a las crecientes preocupaciones por la privacidad y la seguridad de los datos en el entrenamiento de modelos. Su origen se remonta a investigaciones de Google en 2016 con el desarrollo de Federated Learning, una técnica que permite entrenar modelos directamente en dispositivos de los usuarios sin necesidad de centralizar los datos. Esta arquitectura distribuye el proceso de aprendizaje entre múltiples nodos (como teléfonos inteligentes o servidores locales), que colaboran para construir un modelo común sin compartir información sensible. A lo largo del tiempo, esta tecnología ha evolucionado, incorporando técnicas más avanzadas de agregación de parámetros, encriptación homomórfica y aprendizaje diferencialmente privado, lo que ha reforzado su utilidad en entornos donde la confidencialidad de los datos es crítica.
+
+Actualmente, los modelos federados se aplican en sectores como la salud, la banca, las telecomunicaciones y el internet de las cosas (IoT), donde el acceso a datos distribuidos es vital y al mismo tiempo restringido. Por ejemplo, hospitales pueden colaborar para mejorar modelos de diagnóstico sin intercambiar historiales clínicos de pacientes. El estado del arte en el aprendizaje federado incluye innovaciones como el federated transfer learning, que permite combinar conocimientos de diferentes dominios, y el uso de modelos grandes y multimodales en entornos federados. A pesar de los avances, persisten desafíos técnicos como la heterogeneidad de los datos, las limitaciones de hardware en los dispositivos cliente y la sincronización eficiente entre nodos. No obstante, la arquitectura federada se consolida como una de las líneas más prometedoras para un desarrollo ético y escalable de la inteligencia artificial.
+
+
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    server/.style={rectangle, draw=blue!80, fill=blue!20, thick, minimum width=2.5cm, minimum height=1cm},
+    client/.style={rectangle, draw=green!60, fill=green!20, thick, minimum width=2.5cm, minimum height=1cm},
+    arrow/.style={-{Latex}, thick},
+    node distance=1.8cm and 2.5cm
+]
+
+
+% Server node
+\node[server] (server) {Servidor central};
+
+% Client nodes
+\node[client, below left=of server] (client1) {Cliente 1};
+\node[client, below=of server] (client2) {Cliente 2};
+\node[client, below right=of server] (client3) {Cliente 3};
+
+% Arrows from server to clients
+\draw[arrow] (server) -- (client1) node[midway, left] {} ;
+\draw[arrow] (server) -- (client2) node[midway, left] ;
+\draw[arrow] (server) -- (client3) node[midway, right] {\small Modelo global};
+
+% Arrows from clients to server
+\draw[arrow] (client1) -- (server) node[midway, left] {\small Parámetros locales};
+\draw[arrow] (client2) -- (server) node[midway, left] ;
+\draw[arrow] (client3) -- (server) node[midway, right];
+
+% Labels
+\node[below=0.2cm of client2] {\small Cada cliente entrena localmente con sus propios datos};
+
+\end{tikzpicture}
+\caption{Arquitectura de un modelo de aprendizaje federado}
+\end{figure}
+
+Para el problema concreto de reconocer las diferentes etiquetas en una muestra de herbario el aprendizaje federado sera utilizado para desacoplar los procesos de entrenamiento y unificar los modelos de tal forma que permitan la identificación de distintos tipos de etiqueta sin necesidad de reentrenar el modelo y alterar previas calibraciones. A continuacion se exponen las estrategias utilizadas 
+
+
+\subsection{Federated Averaging (FedAvg)}
+FedAvg es uno de los algoritmos más comunes y funciona mediante un promedio ponderado de los parámetros de los modelos locales:
+\begin{equation}
+    w_t = \sum_{k=1}^{K} \frac{n_k}{N} w_t^k
+\end{equation}
+donde $w_t$ representa los parámetros del modelo global en la iteración $t$, $w_t^k$ son los parámetros del modelo entrenado en el cliente $k$, $n_k$ es el número de muestras en el cliente $k$, y $N$ es el número total de muestras en todos los clientes.
+
+\subsection{Federated Stochastic Variance Reduced Gradient (FedSVRG)}
+Este algoritmo reduce la varianza de los gradientes para mejorar la convergencia:
+\begin{equation}
+    g^k = \nabla F_k(w^k) - \nabla F_k(\bar{w}) + \bar{g}
+\end{equation}
+donde $\bar{w}$ es el modelo global anterior y $\bar{g}$ es el gradiente promedio global.
+
+\subsection{FedProx}
+FedProx introduce un término de regularización para manejar la heterogeneidad de los datos en los clientes:
+\begin{equation}
+    w_t^{k} = \arg\min_w F_k(w) + \frac{\mu}{2} \| w - w_t \|^2
+\end{equation}
+donde $\mu$ es un hiperparámetro de regularización.
+
+\subsection{FedOpt}
+FedOpt usa métodos de optimización avanzados como Adam o SGD con momentum para mejorar la agregación:
+\begin{equation}
+    w_{t+1} = w_t - \eta m_t
+\end{equation}
+donde $m_t$ es el momento calculado y $\eta$ es la tasa de aprendizaje.
+
+\subsection{FedAvgM}
+Este algoritmo es una extensión de FedAvg que introduce momentum:
+\begin{equation}
+    m_t = \beta m_{t-1} + (1 - \beta) g_t
+\end{equation}
+\begin{equation}
+    w_{t+1} = w_t - \eta m_t
+\end{equation}
+donde $\beta$ es el coeficiente de momentum
+
+
+Los resultados de estos procedimientos se presentan en la siguiente sección
