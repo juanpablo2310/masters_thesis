@@ -46,6 +46,8 @@
 % Carácteres especiales
 \usepackage{fontenc}
 
+\usepackage[export]{adjustbox}
+
 % Evita ligadura li & fl
 \usepackage{microtype}
 \DisableLigatures{encoding = *, family = *}
@@ -74,6 +76,7 @@
 \usepackage{pgfplots}
 \usepackage{pgfplotstable}
 \usepackage{booktabs}
+\usepackage{svg}
 \pgfplotsset{compat=1.18}
 \usepackage{xcolor}
 \newenvironment{myverbatim}{\Verbatim}{\endVerbatim}
@@ -147,6 +150,16 @@
 \fancyhf{}%
 \renewcommand{\chaptermark}[1]{\markboth{\thechapter.\; #1}{}}
 \renewcommand{\sectionmark}[1]{\markright{\thesection.\; #1}{}}
+% Macro auxiliar: imagen centrada con nombre debajo
+% Uso: \artefacto{ruta/imagen.png}{Nombre del artefacto}
+\newcommand{\artefacto}[2]{%
+  \begin{minipage}[t]{2.1cm}%
+    \centering%
+    \includegraphics[width=2.0cm, height=1.6cm, keepaspectratio,
+                     frame]{#1}\\[2pt]%
+    {\footnotesize #2}%
+  \end{minipage}%
+}
 \fancyhead[LO,RE]{\leftmark}
 \fancyhead[RO,LE]{\rightmark}
 \fancyfoot[CO,CE]{\thepage}
@@ -358,7 +371,7 @@ myedge/.style={->, -{Latex[#1]}}
 \include{05Seccion05}
 \include{06Seccion06}
 \include{07Seccion07}
-
+ 
 %Inicio del apéndice o anexos
 %\begin{appendix}
 %\include{08Apendice01}%
@@ -373,7 +386,7 @@ myedge/.style={->, -{Latex[#1]}}
 {\scriptsize
 \pagestyle{plain}
 % Nombre del documento donde se almacenan las referencias
-\bibliography{Referencias}
+\bibliography{referencias2}
 \nocite{*}
 % Inserta un página adicional al final en blanco 
 %\cleardoublepage

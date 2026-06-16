@@ -4,12 +4,13 @@ import os
 sys.path.append(os.path.dirname(os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))))
 
 
-from client import EnhancedFederatedClient
+from client import EnhancedFederatedClient, SharedEmbeddingClient
 from server import FedAvg,EnhancedFederatedServer,DynamicWeighting,FedAdagrad,FedMedian,FedTrimmedMean,FedProx
 from Trainer import EnhancedFederatedTrainer
 from metrics import MetricsTracker
 from VisualizationTools import VisualizationTools
 from AnaliticTools import CrossValidator,EarlyStoppingCallback
+from class_mask import SharedClassSpace
 
 from scripts.utils.paths import get_project_configs
 
@@ -44,10 +45,19 @@ def main():
         window_size=5
     )
     
-    # Create enhanced clients with privacy
+    # --- Shared embedding space ---
+    # UNAL has 6 classes (global indices 0–5)
+    # Melbourne has 11 classes (global indices 6–16)
+    # Total model outputs: 17
+    shared_space = SharedClassSpace({
+        "client1": list(range(0, 6)),    # UNAL
+        "client2": list(range(6, 17)),   # Melbourne
+    })
+
+    # Create clients with shared embedding space and class masks
     clients = [
-        EnhancedFederatedClient("client1", DataPathClient1),
-        EnhancedFederatedClient("client2", DataPathClient2)
+        SharedEmbeddingClient("client1", DataPathClient1, shared_space),
+        SharedEmbeddingClient("client2", DataPathClient2, shared_space),
     ]
     
     # Initialize metrics and dynamic weighting
@@ -60,7 +70,7 @@ def main():
         FedMedian(),
         FedTrimmedMean(trim_ratio=0.1),
         FedAdagrad(learning_rate=0.01),
-        FedProx(mu=0.01)
+        FedProx(mu=0.01)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 
     ]
     
     results = {}

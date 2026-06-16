@@ -1,39 +1,164 @@
 \chapter{Introduccion}
 
-\textbf{Establecer la jerarquia del problema:
-1. El problema de las colecciones biológicas
-2. El problema de las colecciones biológicas digitales, y el papel de las laminas digitales como registros.
-3. Los registros se acumulan por años, por curadores con diferentes niveles de experticia, y por lo tanto se requieren tareas de curación: por ejemplo, 1) la detección de objetos duplicados sobre las láminas, 2) Anonimización de muestras, entre otras, las cuales requieren personal especializado, y dados los grandes volumenes de datos a procesar es muy difícil llevar a cabo estas tareas.
-4. Estas tareas comunmente requieren la identificación de los objetos que componen una lamina digital.
-5. Aproximaciones previas han propuesto algunas estrategias basadas en Computer Vision para la caracterización de los objetos en las laminas. Sin embargo, colecciones diferentes tienen estrategias diferentes para la caracterización, lo cual dificulta el desarrollo de herramientas para la caracterización homogenea de los componentes
-6. ¿Como armonizar las caracterizaciones automaticas de los objetos que componen laminas de diferentes herbarios?}
+% ============================================================
+%  Sección de introducción — Tesis de Maestría
+%  Detección de artefactos en registros digitales de herbario
+%
+%  Compilar con: pdflatex → bibtex → pdflatex → pdflatex
+%  Requiere: herbario_refs.bib en el mismo directorio
+%  Paquetes necesarios en el preámbulo del documento principal:
+%    \usepackage[utf8]{inputenc}
+%    \usepackage[T1]{fontenc}
+%    \usepackage[spanish]{babel}
+%    \usepackage{hyperref}
+%    \bibliographystyle{apalike}   % o el estilo requerido por su programa
+% ============================================================
 
-La produccion de nuevas ideas y avances en cualquier campo cientifico esta fuertemente asociado a las gestiones de conservacion y administracion de los datos a estudiar. En el caso concreto de la herbologia biologos y botanicos se encargan de recolectar especimenes y someterlos a procesos de conservacion con el fin de armar una coleccion de muestras que puedan ser agrupadas, catalogadas , accedidas y estudiadas con facilidad, dichas colecciones se conocen como herbarios y su administracion correcta y agil representa un pilar fundamental en la generacion y mantenimiento de nuevo conocimiento en esta area, tarea que no es facil pues cada muestra consta de diferentes elementos que ademas de ser numerosos y variados algunos son propios de cada institucion lo que dificulta aun mas las labores de curaduria en general pues el tiempo empleado por un humano para poder prestar atencion a todos los elementos de todas las imagenes es alto ademas de que la probabilidad de equivocacion es alta aun para aquellos entrenados. Las labores de digitalizacion de muestras son practica común para este tipo de instutuciones pues permite tener copias de sus muestras que no se degradan y facilitan la colaboracion entre instituciones sin embargo la labor esta lejos de estar completa una vez la base de datos es emsamblada, es necesario someter las muestras y la metadata a una inspeccion que valide los datos, ejercicio que puede tomar años y no completarse o completarse parcialmente permitiendose inexactitudes en los datos de la muestra que pueden llevar a confusiones y retrasos en futuras investigaciones. 
+\section{Introducción}
+
+La recolección y catalogación de muestras biológicas constituyen procesos fundamentales
+para la producción de nuevo conocimiento en el campo de la biología. A través de estas
+actividades, los investigadores obtienen especímenes de diversas especies, los cuales son
+sometidos a procedimientos de conservación y organización sistemática con el propósito de
+conformar colecciones de referencia permanente. En el caso de muestras vegetales, dichas
+colecciones reciben el nombre de \textit{herbarios}~\citep{floridaHerbarium}.
+
+Los herbarios constituyen una infraestructura científica de valor incalculable, tanto para
+la comunidad académica como para la sociedad en general~\citep{desmedt2024, domingos2023}.
+Para los biólogos, representan repositorios de información morfológica, taxonómica,
+geográfica y fenológica que permiten documentar la biodiversidad, estudiar cambios en la
+distribución de las especies a lo largo del tiempo y servir como material de referencia para
+la descripción de nuevas especies y el análisis de cambio climático~\citep{meineke2018,
+heberling2019}. Para el público en general, estas colecciones sustentan políticas de
+conservación ambiental, programas de educación científica e iniciativas de monitoreo de la
+biodiversidad que inciden directamente en la gestión del territorio y los recursos
+naturales~\citep{paton2025}. Según el \textit{Index Herbariorum}, al cierre de 2024
+existían 3.864 herbarios activos en el mundo, que en conjunto albergan más de
+402 millones de especímenes~\citep{thiers2024}.
+
+\subsection*{Preparación de registros de herbario}
+
+El proceso de incorporación de un espécimen a un herbario comprende varias
+etapas~\citep{floridaHerbarium, nelsonEtAl2012}. En primer lugar, el investigador
+recolecta la muestra en campo, registrando datos asociados como la localización
+geográfica, el hábitat y la fecha de colecta. Posteriormente, la muestra es sometida a
+técnicas de prensado y secado que preservan su estructura morfológica. Una vez seca, se
+monta sobre una lámina rígida de papel libre de ácido, conformando lo que se denomina un
+\textit{registro de herbario}.
+
+Dado que estas láminas sirven como soporte para tareas de caracterización morfológica
+—que incluyen el análisis de tallos, flores e inflorescencias— y de georeferenciación,
+es práctica común incluir, junto con el material vegetal, una serie de \textit{artefactos
+físicos de identificación y referencia}~\citep{hussein2021, waltonEtAl2023}: sellos
+institucionales, etiquetas con datos de colecta, escalas métricas y referencias de color.
+Estos elementos permiten contextualizar e interpretar correctamente la muestra durante
+análisis posteriores, y su presencia forma parte integral del protocolo de
+preparación~\citep{weberEtAl2020}.
+
+Los protocolos de preparación de registros de herbario han evolucionado considerablemente
+desde el surgimiento de los primeros herbarios en el siglo \textsc{xvi}~\citep{domingos2023}.
+En la actualidad, estos registros adoptan un carácter predominantemente \textit{digital}:
+la lámina física es digitalizada mediante sistemas de adquisición de imagen de alta
+resolución, lo cual introduce un elemento adicional al protocolo relacionado con las
+condiciones de captura —tipo de cámara, configuración de iluminación, resolución, entre
+otras—~\citep{desmedt2024}. Este proceso de digitalización se lleva a cabo hoy en
+instituciones de todo el mundo, generando colecciones digitales que comprenden decenas o
+cientos de miles de imágenes~\citep{klopper2025, heberling2019}.
+
+\subsection*{Curaduría de colecciones digitales}
+
+La gestión y el mantenimiento de estas colecciones se realizan a través de la
+\textit{curaduría}~\citep{paton2025}. Las tareas curatoriales incluyen garantizar la
+integridad física de la lámina, verificar la presencia de todos los artefactos de
+información requeridos, comprobar la exactitud y completitud de los datos consignados en
+dichos artefactos, y asegurar la calidad general de los registros. Sin embargo, estas
+labores son costosas en términos de recursos humanos y económicos; además, existe una
+marcada escasez de especialistas en curaduría, lo que representa uno de los principales
+cuellos de botella en la gestión de las colecciones~\citep{farrugiaEtAl2022,
+waltonEtAl2023}.
+
+Un aspecto crítico de las tareas de curaduría es la \textit{detección} de los artefactos
+presentes en las imágenes~\citep{weberEtAl2020, dillenEtAl2025}. Por ejemplo, verificar
+la completitud de los artefactos —comprobando que una lámina incluya todos los elementos
+requeridos por el protocolo institucional— o proteger información sensible mediante su
+ofuscación, son tareas que dependen directamente de la capacidad de localizar dichos
+artefactos con precisión. Asimismo, las tareas de caracterización de los objetos biológicos
+a partir de la imagen digital requieren, en muchos casos, la remoción o enmascaramiento de
+los artefactos, ya que estos constituyen una fuente de ruido o confusión para los algoritmos
+de análisis automatizado~\citep{hussein2021}.
+
+Esta dificultad se ve agravada por la heterogeneidad de las colecciones: cada espécimen
+puede presentar un conjunto distinto de artefactos, cuya cantidad, disposición y
+características varían según la institución y el período histórico en que fue
+preparado~\citep{waltonEtAl2023}. Ante esta variabilidad, la revisión manual de grandes
+volúmenes de imágenes resulta inviable, no solo por el tiempo que demanda, sino también
+por la alta probabilidad de error que conlleva, incluso para revisores con
+entrenamiento~\citep{farrugiaEtAl2022, littleEtAl2020}.
+
+Los trabajos previos en el ámbito del análisis automatizado de imágenes de herbario se
+han concentrado principalmente en la caracterización de los objetos biológicos presentes
+en las láminas —tales como hojas, flores y semillas—, sin abordar de manera sistemática
+el problema de la \textit{detección y caracterización de los artefactos de
+soporte}~\citep{tessler2025, tuiaEtAl2022}. Esta brecha motiva el presente trabajo, cuyo
+objetivo es desarrollar un enfoque computacional para la detección automática de dichos
+artefactos en imágenes digitales de registros de herbario, con miras a apoyar y agilizar
+las labores de curaduría.
+
+\bigskip
+\noindent
+% TODO: Insertar imagen representativa del proceso (lámina con artefactos identificados)
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.85\textwidth]{00Figuras/proceso_herbario.png}
+  \caption{Ejemplo de un registro digital de herbario con sus artefactos de referencia.
+           Se destacan: (a)~sello institucional, (b)~etiqueta de colecta,
+           (c)~escala métrica y (d)~referencia de color.}
+  \label{fig:proceso_herbario}
+\end{figure}
+
+% --- Bibliografía (incluir en el documento principal) ---
+% \bibliography{herbario_refs}
+
+
+
+
+
+
+%\textbf{Establecer la jerarquia del problema:
+%1. El problema de las colecciones biológicas
+%2. El problema de las colecciones biológicas digitales, y el papel de las laminas digitales como registros.
+%3. Los registros se acumulan por años, por curadores con diferentes niveles de experticia, y por lo tanto se requieren tareas de curación: por ejemplo, 1) la detección de objetos duplicados sobre las láminas, 2) Anonimización de muestras, entre otras, las cuales requieren personal especializado, y dados los grandes volumenes de datos a procesar es muy difícil llevar a cabo estas tareas.
+%4. Estas tareas comunmente requieren la identificación de los objetos que componen una lamina digital.
+%5. Aproximaciones previas han propuesto algunas estrategias basadas en Computer Vision para la caracterización de los objetos en las laminas. Sin embargo, colecciones diferentes tienen estrategias diferentes para la caracterización, lo cual dificulta el desarrollo de herramientas para la caracterización homogenea de los componentes
+%6. ¿Como armonizar las caracterizaciones automaticas de los objetos que componen laminas de diferentes herbarios?}
+
+%La produccion de nuevas ideas y avances en cualquier campo cientifico esta fuertemente asociado a las gestiones de conservacion y administracion de los datos a estudiar. En el caso concreto de la herbologia biologos y botanicos se encargan de recolectar especimenes y someterlos a procesos de conservacion con el fin de armar una coleccion de muestras que puedan ser agrupadas, catalogadas , accedidas y estudiadas con facilidad, dichas colecciones se conocen como herbarios y su administracion correcta y agil representa un pilar fundamental en la generacion y mantenimiento de nuevo conocimiento en esta area, tarea que no es facil pues cada muestra consta de diferentes elementos que ademas de ser numerosos y variados algunos son propios de cada institucion lo que dificulta aun mas las labores de curaduria en general pues el tiempo empleado por un humano para poder prestar atencion a todos los elementos de todas las imagenes es alto ademas de que la probabilidad de equivocacion es alta aun para aquellos entrenados. Las labores de digitalizacion de muestras son practica común para este tipo de instutuciones pues permite tener copias de sus muestras que no se degradan y facilitan la colaboracion entre instituciones sin embargo la labor esta lejos de estar completa una vez la base de datos es emsamblada, es necesario someter las muestras y la metadata a una inspeccion que valide los datos, ejercicio que puede tomar años y no completarse o completarse parcialmente permitiendose inexactitudes en los datos de la muestra que pueden llevar a confusiones y retrasos en futuras investigaciones. 
 
  
-
+ 
 
 \section{Planteamiento del Problema}
 
 
 
-La gestión de un herbario moderno enfrenta una dualidad de desafíos: los inherentes a la conservación física de los especímenes y los asociados a la administración de la vasta cantidad de información que estos contienen.
-
-En primer lugar, los desafíos en la conservación y clasificación física son constantes. Cada espécimen, desde su colecta en campo hasta su montaje en pliegos de papel estandarizado, requiere un manejo meticuloso para prevenir su degradación por factores bióticos (plagas) o abióticos (humedad, luz). La variabilidad en tamaño y forma de las muestras exige soluciones de almacenamiento flexibles y un control ambiental riguroso. Este proceso, fundamental para la preservación a largo plazo, es manual, requiere personal altamente capacitado y consume una parte considerable del presupuesto operativo de la institución.
-
-En segundo lugar, y de manera más crítica para la investigación contemporánea, se encuentran los desafíos en la gestión de la información. A cada espécimen se le asocia una etiqueta con metadatos cruciales: taxonomía, georreferenciación, fecha de colecta, colector, y notas ecológicas. Históricamente, esta información se ha registrado en formatos no estandarizados, con variaciones que dependen de la época, la institución e incluso del colector. La naturaleza de esta metadata, por tanto, es exclusiva y heterogénea, lo que representa un desafío mayúsculo para la interoperabilidad entre colecciones y el desarrollo de herramientas de automatización. La transcripción manual de estas etiquetas a bases de datos digitales es un proceso lento, propenso a errores tipográficos y de interpretación, creando un cuello de botella que retrasa la disponibilidad de datos para la comunidad científica.
-
+La gestión de un herbario moderno enfrenta una dualidad de desafíos: los inherentes a la conservación física de los especímenes y los asociados a la administración de la vasta cantidad de información que estos contienen.\\
+En primer lugar, los desafíos en la conservación y clasificación física son constantes. Cada espécimen, desde su colecta en campo hasta su montaje en pliegos de papel estandarizado, requiere un manejo meticuloso para prevenir su degradación por factores bióticos (plagas) o abióticos (humedad, luz). La variabilidad en tamaño y forma de las muestras exige soluciones de almacenamiento flexibles y un control ambiental riguroso. Este proceso, fundamental para la preservación a largo plazo, es manual, requiere personal altamente capacitado y consume una parte considerable del presupuesto operativo de la institución.\\
+En segundo lugar, y de manera más crítica para la investigación contemporánea, se encuentran los desafíos en la gestión de la información. A cada espécimen se le asocia una etiqueta con metadatos cruciales: taxonomía, georreferenciación, fecha de colecta, colector, y notas ecológicas. Históricamente, esta información se ha registrado en formatos no estandarizados, con variaciones que dependen de la época, la institución e incluso del colector. La naturaleza de esta metadata, por tanto, es exclusiva y heterogénea, lo que representa un desafío mayúsculo para la interoperabilidad entre colecciones y el desarrollo de herramientas de automatización. La transcripción manual de estas etiquetas a bases de datos digitales es un proceso lento, propenso a errores tipográficos y de interpretación, creando un cuello de botella que retrasa la disponibilidad de datos para la comunidad científica.\\
 El problema central que esta tesis aborda es, por lo tanto, el desarrollo de sistemas de vision por computador en la identificacion de componentes propios de la muestra (metadata). Componente que de conseguirse servira de pieza angular en la contruccion de una herramienta de curadura automatica que saque provecho de los estanderes comunes establecidos entre herbarios y ademas de eso permita flexibilidad en contexto de metadata usado 
 
-\section{Justificación}
+%\section{Justificación}
 
-Desde la perspectiva científica, el desarrollo de un sistema de curaduría inteligente y agnóstico al formato de los metadatos tiene el potencial de acelerar drásticamente el proceso de digitalización y movilización de datos de biodiversidad. Al superar el obstáculo de la heterogeneidad de los formatos, se facilita la integración de la información del Herbario Nacional de Colombia con redes globales como el Global Biodiversity Information Facility (GBIF). Esto no solo democratiza el acceso a la información para investigadores de todo el mundo, sino que también habilita estudios a macroescala sobre patrones de biodiversidad, modelado de nichos ecológicos y análisis de los impactos del cambio global, utilizando el valioso acervo biológico de Colombia, uno de los países más megadiversos del planeta.
+%Desde la perspectiva científica, el desarrollo de un sistema de curaduría inteligente y agnóstico al formato de los metadatos tiene el potencial de acelerar drásticamente el proceso de digitalización y movilización de datos de biodiversidad. Al superar el obstáculo de la heterogeneidad de los formatos, se facilita la integración de la información del Herbario Nacional de Colombia con redes globales como el Global Biodiversity Information Facility (GBIF). Esto no solo democratiza el acceso a la información para investigadores de todo el mundo, sino que también habilita estudios a macroescala sobre patrones de biodiversidad, modelado de nichos ecológicos y análisis de los impactos del cambio global, utilizando el valioso acervo biológico de Colombia, uno de los países más megadiversos del planeta.
 
-Desde la perspectiva tecnológica, este proyecto representa una innovación en la aplicación de técnicas de inteligencia artificial a un problema real y complejo del dominio de la biología de colecciones. La creación de un modelo "agnóstico"\footnote{es decir independiente del esquema de metadata propio de cada institución}  no solo resuelve un problema para el Herbario Nacional, sino que establece un precedente y un marco de trabajo que podría ser adaptado por otras instituciones de tamaño mediano y pequeño en América Latina y el mundo, que enfrentan desafíos similares con recursos limitados. El producto de esta tesis será una contribución tangible a la economización y uso eficiente de los recursos en la gestión de inventarios biológicos.
+%\section{Justificación}
 
-Finalmente, desde la perspectiva institucional, esta investigación se alinea directamente con los objetivos estratégicos de modernización del Herbario Nacional de Colombia. Pues al dar este primer paso en la implementacion de un modelo de aprendizaje profundo para la identificacion de elementos en las muestras se da un solido paso hacia adelante en la innovación tecnológica para la gestión de colecciones biológicas.
+%Desde la perspectiva científica, el desarrollo de un sistema de curaduría inteligente y agnóstico al formato de los metadatos tiene el potencial de acelerar drásticamente el proceso de digitalización y movilización de datos de biodiversidad. Al superar el obstáculo de la heterogeneidad de los formatos, se facilita la integración de la información del Herbario Nacional de Colombia con redes globales como el Global Biodiversity Information Facility (GBIF). Esto no solo democratiza el acceso a la información para investigadores de todo el mundo, sino que también habilita estudios a macroescala sobre patrones de biodiversidad, modelado de nichos ecológicos y análisis de los impactos del cambio global, utilizando el valioso acervo biológico de Colombia, uno de los países más megadiversos del planeta.
 
-\section{Objetivos}
+%Desde la perspectiva tecnológica, este proyecto representa una innovación en la aplicación de técnicas de inteligencia artificial a un problema real y complejo del dominio de la biología de colecciones. La creación de un modelo "agnóstico"\footnote{es decir independiente del esquema de metadata propio de cada institución}  no solo resuelve un problema para el Herbario Nacional, sino que establece un precedente y un marco de trabajo que podría ser adaptado por otras instituciones de tamaño mediano y pequeño en América Latina y el mundo, que enfrentan desafíos similares con recursos limitados. El producto de esta tesis será una contribución tangible a la economización y uso eficiente de los recursos en la gestión de inventarios biológicos.
+
+%Finalmente, desde la perspectiva institucional, esta investigación se alinea directamente con los objetivos estratégicos de modernización del Herbario Nacional de Colombia. Pues al dar este primer paso en la implementacion de un modelo de aprendizaje profundo para la identificacion de elementos en las muestras se da un solido paso hacia adelante en la innovación tecnológica para la gestión de colecciones biológicas.
+
+%\section{Objetivos}
 
 \subsection{Objetivo General} 
 
@@ -46,7 +171,7 @@ Identificar la arquitectura mas apropiada para un modelo de visión por computad
     
     \item Presentar un análisis profundo del desempeño  empleando un paradigma simple y uno federado para el  proceso de entrenamiento con aras de entender y desarrollar una receta para la ejecucion de esta clase de projectos
 \end{itemize}
-\clearpage
+%\clearpage
 
 
 

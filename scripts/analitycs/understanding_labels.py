@@ -42,7 +42,7 @@ data_total["valid_path"] = [
     isValid("data", "imagenes", filename) for filename in data_total.filename
 ]
 
-
+ 
 enriching_list = []
 # os.makedirs()
 for name in tqdm(data_total.filename.unique(), total=len(data_total.filename.unique())):
