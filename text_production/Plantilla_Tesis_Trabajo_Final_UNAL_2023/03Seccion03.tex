@@ -18,8 +18,6 @@ La utilización de dos colecciones provenientes de instituciones diferentes perm
 
 \begin{table}[ht]
 \centering
-
-\label{tab:datasets}
 \begin{tabular}{lcc}
 \hline
 \textbf{Característica} & \textbf{Herbario UNAL} & \textbf{Herbario Melbourne} \\
@@ -38,6 +36,7 @@ Total imágenes & \multicolumn{2}{c}{4227} \\
 \hline
 \end{tabular}
 \caption{Resumen de los conjuntos de datos utilizados en este estudio.}
+\label{tab:datasets}
 \end{table}
 
 
@@ -55,8 +54,6 @@ Las anotaciones fueron realizadas mediante cuadros delimitadores rectangulares (
 
 \begin{table}[ht!]
 \centering
-
-\label{tab:category_mapping_img}
 \renewcommand{\arraystretch}{1.4}
 \begin{tabular}{>{\centering\arraybackslash}p{3.0cm}
                 >{\centering\arraybackslash}p{2.6cm}
@@ -118,6 +115,7 @@ Sellos
          en los conjuntos de datos UNAL y Melbourne, ilustrada con imágenes
          representativas de cada categoría. La línea vertical doble marca la
          distinción entre ambas instituciones.}
+\label{tab:category_mapping_img}
 \end{table}
  
 
@@ -135,7 +133,7 @@ Las anotaciones originales estaban almacenadas en formato JSON utilizando una re
 
 Posteriormente, se implementó un proceso de validación automática para verificar la consistencia geométrica de las anotaciones, asegurando que todos los cuadros delimitadores permanecieran contenidos dentro de los límites de la imagen. Las anotaciones inconsistentes fueron corregidas automáticamente durante el proceso de validación.
 
-Finalmente, las categorías presentes en la colección de Melbourne fueron alineadas con las categorías definidas para el conjunto UNAL con el propósito de obtener una representación homogénea entre ambos repositorios. La Tabla~\ref{tab:category_mapping} presenta la correspondencia conceptual establecida entre las categorías de ambas colecciones y los grupos funcionales utilizados durante el proceso de armonización. Este procedimiento permitió disponer de dos conjuntos de datos compatibles entre sí, preservando la información original de cada colección y facilitando tanto la comparación directa de resultados como la implementación posterior de los experimentos de aprendizaje federado.
+Finalmente, las categorías presentes en la colección de Melbourne fueron alineadas con las categorías definidas para el conjunto UNAL con el propósito de obtener una representación homogénea entre ambos repositorios. La Tabla~\ref{tab:category_mapping_img} presenta la correspondencia conceptual establecida entre las categorías de ambas colecciones y los grupos funcionales utilizados durante el proceso de armonización. Este procedimiento permitió disponer de dos conjuntos de datos compatibles entre sí, preservando la información original de cada colección y facilitando tanto la comparación directa de resultados como la implementación posterior de los experimentos de aprendizaje federado.
 
 
 % \subsection*{Protocolo de Anotación - Herbario UNAL}
@@ -383,8 +381,30 @@ Versiones más recientes, como YOLOv3 y YOLOv5, incorporan arquitecturas \textit
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\textwidth]{00Figuras/yolo_architecture_diagram.png}
-\caption{Arquitectura de YOLO: salida de predicciones a partir de una única pasada de la imagen}
+\begin{tikzpicture}[
+    font=\small,
+    img/.style={rectangle, draw=black!60, fill=green!6, minimum width=2.4cm, minimum height=2.4cm, line width=0.7pt},
+    box/.style={rectangle, rounded corners, draw=blue!60!black, fill=blue!8, align=center,
+                inner sep=5pt, text width=2.7cm, line width=0.8pt, minimum height=2.4cm},
+    outp/.style={rectangle, rounded corners, draw=orange!75!black, fill=orange!12, align=center,
+                inner sep=5pt, text width=3.0cm, line width=0.8pt, minimum height=2.4cm},
+    ar/.style={-{Stealth[length=3mm]}, line width=1pt, black!65},
+]
+\node[img] (im) {};
+\foreach \x in {-1.2,-0.6,0,0.6} \draw[black!35] ([xshift=\x cm]im.north) -- ([xshift=\x cm]im.south);
+\foreach \y in {-1.2,-0.6,0,0.6} \draw[black!35] ([yshift=\y cm]im.west) -- ([yshift=\y cm]im.east);
+\draw[red!70!black, line width=1pt] ([xshift=-0.5cm,yshift=0.2cm]im.center) rectangle ++(1.0,0.8);
+\node[font=\footnotesize, below=1pt of im] {imagen $\to$ grilla $S\times S$};
+\node[box, right=10mm of im] (net) {\textbf{Una sola pasada}\\ por la red\\(\emph{You Only Look Once})};
+\node[outp, right=10mm of net] (res) {\textbf{Predicción directa}\\ por celda:\\ caja $(x,y,w,h)$,\\ confianza y clase};
+\draw[ar] (im) -- (net);
+\draw[ar] (net) -- (res);
+\end{tikzpicture}
+\caption{Representación conceptual de YOLO. La imagen se divide en una grilla de $S\times S$
+         celdas y, en una \emph{única pasada} por la red, cada celda predice de forma directa
+         las cajas delimitadoras (con su confianza) y la clase de los objetos, lo que permite
+         la detección en tiempo real.}
+\label{fig:yolo_conceptual}
 \end{figure}
 
 \subsubsection{SSD (Single Shot MultiBox Detector)}  
@@ -419,55 +439,16 @@ donde:
 
 \section{Métodos :}
 
-% ------------------------------------------------------------------
-\subsection{Manejo del desbalance de clases}
-% ------------------------------------------------------------------
+El orden en que se describen los siguientes procedimientos refleja el orden en que se
+aplicaron sobre los datos, aspecto que resulta crítico para la validez de las métricas
+reportadas. \textbf{Primero} se realizó la partición de los conjuntos en entrenamiento,
+validación y prueba; \textbf{solo después}, y exclusivamente sobre el subconjunto de
+entrenamiento, se aplicaron las técnicas de manejo del desbalance (\textit{data
+augmentation} y ponderación de clases). Este orden evita que copias aumentadas de una misma
+imagen queden repartidas entre entrenamiento y evaluación, lo que filtraría información y
+produciría estimaciones de desempeño optimistas (fuga de datos y sobreajuste). Finalmente
+se describen las métricas empleadas para la evaluación.
 
-\begin{figure}[H]
-    \centering
-    \begin{subfigure}[b]{0.48\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{00Figuras/distributionLabelsUn.png}
-        \caption{Distribución de etiquetas set UN}
-        \label{fig:imagen1}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[b]{0.48\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{00Figuras/distribucionLabelsMelu.png}
-        \caption{Distribución de etiquetas set Melbourne}
-        \label{fig:imagen2}
-    \end{subfigure}
-    \caption{Distribución de etiquetas para los sets de datos}
-    \label{fig:imagenes}
-\end{figure}
-
-Los conjuntos de datos utilizados en este trabajo presentan un marcado desbalance entre
-clases: mientras que categorías como \texttt{Mascara\_Descripciones} (UNAL) o
-\texttt{database label} (Melbourne) cuentan con miles de instancias etiquetadas, otras
-como \texttt{small database label} están notoriamente subrepresentadas. Este desbalance
-representa un desafío bien documentado en el entrenamiento de modelos de detección de
-objetos~\cite{farrugiaEtAl2022}, pues los optimizadores tienden a sesgar el modelo hacia
-las clases mayoritarias, degradando su capacidad de detectar las clases minoritarias.
- 
-Para mitigar este efecto se adoptaron dos estrategias complementarias. En primer lugar, se
-aplicó \textit{data augmentation} dirigido sobre las instancias subrepresentadas, fueron
-sometidas a transformaciones geométricas y fotométricas incluyendo rotaciones, cambios de
-escala, variaciones de brillo y recortes aleatorios con el fin de incrementar
-artificialmente la frecuencia con que estas clases aparecen durante el entrenamiento,
-favoreciendo la generalización del modelo sin introducir nuevos datos reales~\cite{Goodfellow2016}.
-En segundo lugar, se aprovechó el mecanismo de pesos de clase (\textit{class weights})
-implementado de forma nativa en la biblioteca Ultralytics para YOLO: durante el
-entrenamiento, el \textit{framework} computa automáticamente un peso inversamente
-proporcional a la frecuencia de cada clase en el conjunto de entrenamiento, elevado a una
-potencia controlada por el hiperparámetro \texttt{cls\_pw}~\cite{guo2025review}. Este
-peso pondera la contribución de cada instancia en la función de pérdida de clasificación,
-de modo que los errores cometidos sobre clases raras reciben una penalización mayor y el
-modelo dedica proporcionalmente más capacidad de aprendizaje a dichas clases. Adicionalmente,
-la función de pérdida focal (\textit{focal loss}) empleada por YOLO reduce la influencia
-de las detecciones fáciles predominantemente las de clases mayoritarias amplificando
-la señal de gradiente proveniente de los ejemplos difíciles y escasos~\cite{waltonEtAl2023}.
- 
 % ------------------------------------------------------------------
 \subsection{Partición del conjunto de datos: entrenamiento, validación y prueba}
 % ------------------------------------------------------------------
@@ -503,6 +484,100 @@ de obtener una estimación imparcial del desempeño del modelo ante datos comple
 nuevos~\cite{everingham2010pascal}.
  
 % ------------------------------------------------------------------
+\subsection{Manejo del desbalance de clases}
+% ------------------------------------------------------------------
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{00Figuras/distributionLabelsUn.png}
+        \caption{Distribución de etiquetas set UN}
+        \label{fig:imagen1}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{00Figuras/distribucionLabelsMelu.png}
+        \caption{Distribución de etiquetas set Melbourne}
+        \label{fig:imagen2}
+    \end{subfigure}
+    \caption{Distribución de etiquetas para los sets de datos}
+    \label{fig:imagenes}
+\end{figure}
+
+Los conjuntos de datos utilizados en este trabajo presentan un marcado desbalance entre
+clases: mientras que categorías como \texttt{Mascara\_Descripciones} (UNAL) o
+\texttt{database label} (Melbourne) cuentan con miles de instancias etiquetadas, otras
+como \texttt{small database label} están notoriamente subrepresentadas. Este desbalance
+representa un desafío bien documentado en el entrenamiento de modelos de detección de
+objetos~\cite{farrugiaEtAl2022}, pues los optimizadores tienden a sesgar el modelo hacia
+las clases mayoritarias, degradando su capacidad de detectar las clases minoritarias.
+ 
+Para mitigar este efecto se adoptaron dos estrategias complementarias. Es importante
+subrayar que ambas se aplicaron \textbf{únicamente sobre el subconjunto de entrenamiento},
+una vez realizada la partición descrita en la sección anterior; los subconjuntos de
+validación y prueba conservaron su distribución original, de modo que las métricas reflejan
+el desempeño sobre datos representativos del escenario real y no sobre copias artificiales.
+
+En primer lugar, se aplicó \textit{data augmentation} dirigido sobre las instancias
+subrepresentadas, que fueron sometidas a transformaciones geométricas y fotométricas
+incluyendo rotaciones, cambios de escala, variaciones de brillo y recortes aleatorios, con
+el fin de incrementar artificialmente la frecuencia con que estas clases aparecen durante
+el entrenamiento, favoreciendo la generalización del modelo sin introducir nuevos datos
+reales~\cite{Goodfellow2016}. Formalmente, dada una imagen de entrenamiento $x$ con su
+conjunto de cajas anotadas $y$, cada réplica aumentada se obtiene aplicando una
+transformación $T_\theta$ muestreada de una familia paramétrica $\mathcal{T}$,
+
+\begin{equation}
+  (x', y') = T_\theta(x, y), \qquad \theta \sim \mathcal{T},
+  \label{eq:augment}
+\end{equation}
+
+donde $T_\theta$ actúa de manera consistente sobre la imagen y sobre las coordenadas de las
+cajas (por ejemplo, una rotación rota también los \textit{bounding boxes}). Para cada clase
+minoritaria $c$ se generó un número de réplicas controlado por un factor de sobremuestreo
+$\rho_c$ inversamente proporcional a su frecuencia, de forma que el número efectivo de
+instancias se aproximara al de las clases mayoritarias,
+$n_c^{\text{aug}} = \rho_c\, n_c$ con $\rho_c \propto \max_{c'} n_{c'} / n_c$.
+
+En segundo lugar, se aprovechó el mecanismo de pesos de clase (\textit{class weights})
+implementado de forma nativa en la biblioteca Ultralytics para YOLO. A cada clase $c$ se le
+asignó un peso inversamente proporcional a su frecuencia en el conjunto de entrenamiento,
+elevado a una potencia controlada por el hiperparámetro \texttt{cls\_pw}~\cite{guo2025review}:
+
+\begin{equation}
+  w_c = \left( \frac{N}{C\, n_c} \right)^{\gamma_{\text{cls}}},
+  \label{eq:classweights}
+\end{equation}
+
+donde $n_c$ es el número de instancias de la clase $c$, $N = \sum_{c} n_c$ el total de
+instancias, $C$ el número de clases y $\gamma_{\text{cls}}$ el exponente asociado a
+\texttt{cls\_pw}. Este peso pondera la contribución de cada instancia en la función de
+pérdida de clasificación, de modo que los errores cometidos sobre clases raras reciben una
+penalización mayor y el modelo dedica proporcionalmente más capacidad de aprendizaje a
+dichas clases.
+
+Adicionalmente, la función de pérdida focal (\textit{focal loss}) empleada por
+YOLO~\cite{waltonEtAl2023} reduce la influencia de las detecciones fáciles
+predominantemente las de clases mayoritarias amplificando la señal de gradiente
+proveniente de los ejemplos difíciles y escasos. Para una predicción con probabilidad
+estimada $p_t$ sobre la clase verdadera, la pérdida focal se define como
+
+\begin{equation}
+  \mathrm{FL}(p_t) = -\,\alpha_t \,(1 - p_t)^{\gamma}\, \log(p_t),
+  \label{eq:focal}
+\end{equation}
+
+donde $\alpha_t$ es un factor de balanceo por clase y $\gamma \ge 0$ es el parámetro de
+enfoque (\textit{focusing}). El término modulador $(1 - p_t)^{\gamma}$ es cercano a cero
+cuando el ejemplo está bien clasificado ($p_t \to 1$), atenuando su aporte al gradiente, y
+cercano a uno cuando el ejemplo es difícil ($p_t \to 0$); de este modo el entrenamiento se
+concentra en los casos mal resueltos, que típicamente corresponden a las clases
+minoritarias. Cuando $\gamma = 0$, la ecuación~\eqref{eq:focal} se reduce a la entropía
+cruzada ponderada estándar.
+ 
+% ------------------------------------------------------------------
 \subsection{Selección y justificación de las métricas de evaluación}
 % ------------------------------------------------------------------
  
@@ -511,7 +586,58 @@ simultáneamente la calidad de la clasificación y la precisión de la localizac
 de los objetos detectados. En este trabajo se seleccionaron tres métricas complementarias:
 \textbf{Precisión} (\textit{Precision}), \textbf{puntuación F1} (\textit{F1 score}) e
 \textbf{Intersección sobre Unión} (\textit{Intersection over Union}, IoU).
- 
+
+Conviene precisar que, en detección de objetos, estas métricas se calculan a nivel de
+\textbf{objeto} (cada \textit{bounding box} predicho) y no a nivel de píxel. Una predicción
+se contabiliza como verdadero positivo (VP) cuando su confianza supera un umbral
+$s_{\text{conf}}$ y su solapamiento con una caja de referencia satisface
+$\mathrm{IoU} \ge 0.5$; en caso contrario se considera un falso positivo (FP), y toda caja
+de referencia sin predicción asociada constituye un falso negativo (FN). La
+Figura~\ref{fig:metricas_deteccion} ilustra estas tres situaciones sobre una lámina de
+herbario. Dado que el conteo de VP y FP depende del umbral de confianza $s_{\text{conf}}$,
+en el Capítulo de resultados la \textit{Precisión} y el \textit{recall} se reportan en dos
+regímenes (umbral alto y umbral bajo), tal como se detalla más adelante.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[font=\small,
+   gt/.style={draw=black!55, dashed, line width=0.9pt},
+   tp/.style={draw=green!55!black, line width=1.3pt},
+   fp/.style={draw=red!70!black, line width=1.3pt},
+]
+  \draw[fill=green!4, draw=black!40] (0,0) rectangle (7,5);
+  \node[anchor=north west, font=\footnotesize, text=black!55] at (0.1,5.0) {lámina de herbario};
+  \draw[gt] (0.6,3.2) rectangle (2.2,4.4);
+  \draw[tp] (0.75,3.3) rectangle (2.35,4.5);
+  \node[green!45!black, font=\footnotesize\bfseries] at (1.5,3.0) {VP};
+  \draw[gt] (4.4,3.0) rectangle (6.4,4.5);
+  \draw[tp] (4.5,3.1) rectangle (6.5,4.6);
+  \node[green!45!black, font=\footnotesize\bfseries] at (5.45,2.8) {VP};
+  \draw[gt] (0.8,0.6) rectangle (2.4,1.8);
+  \node[black!60, font=\footnotesize\bfseries] at (1.6,0.35) {FN};
+  \draw[fp] (4.6,0.7) rectangle (6.2,1.9);
+  \node[red!60!black, font=\footnotesize\bfseries] at (5.4,0.45) {FP};
+  \begin{scope}[shift={(8.0,3.6)}]
+    \draw[tp] (0,0.9) rectangle (0.5,1.2); \node[anchor=west,font=\footnotesize] at (0.6,1.05){VP: detección correcta};
+    \draw[fp] (0,0.3) rectangle (0.5,0.6); \node[anchor=west,font=\footnotesize] at (0.6,0.45){FP: detección espuria};
+    \draw[gt] (0,-0.3) rectangle (0.5,0.0); \node[anchor=west,font=\footnotesize] at (0.6,-0.15){FN: objeto no detectado};
+  \end{scope}
+  \node[anchor=west, font=\footnotesize, text=black!70] at (8.0,2.4)
+     {$\mathrm{Precisi\acute{o}n}=\dfrac{VP}{VP+FP}$};
+  \node[anchor=west, font=\footnotesize, text=black!70] at (8.0,1.6)
+     {$\mathrm{Recall}=\dfrac{VP}{VP+FN}$};
+  \node[anchor=west, font=\footnotesize, text=black!70] at (8.0,0.8)
+     {$F_1=\dfrac{2\,P\cdot R}{P+R}$};
+\end{tikzpicture}
+\caption{Verdaderos positivos (VP), falsos positivos (FP) y falsos negativos (FN) en
+         detección de objetos. Las cajas discontinuas son anotaciones de referencia y las
+         continuas son predicciones del modelo. Una predicción es VP si coincide con una
+         referencia ($\mathrm{IoU}\ge 0.5$); una predicción sin referencia es FP y una
+         referencia sin predicción es FN. De estos conteos se derivan la Precisión, el
+         recall y la puntuación $F_1$.}
+\label{fig:metricas_deteccion}
+\end{figure}
+
 La \textit{Precisión} se define como la fracción de detecciones positivas que son
 efectivamente correctas:
  
@@ -551,9 +677,33 @@ delimitadora predicha por el modelo ($B_p$) y la caja delimitadora de referencia
   \text{IoU} = \frac{|B_p \cap B_{gt}|}{|B_p \cup B_{gt}|},
   \label{eq:iou}
 \end{equation}
- 
+
 \noindent y toma valores en el intervalo $[0, 1]$, donde 1 corresponde a un solapamiento
-perfecto. Esta métrica es indispensable en tareas de detección de objetos porque evalúa
+perfecto. La Figura~\ref{fig:iou} ilustra geométricamente el cálculo del IoU como el
+cociente entre el área de intersección y el área de unión de ambas cajas.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[font=\small]
+  \fill[green!50!black, opacity=0.12] (0,0) rectangle (3.2,2.2);
+  \fill[blue!60, opacity=0.12] (1.6,0.8) rectangle (4.8,3.0);
+  \fill[orange!70, opacity=0.45] (1.6,0.8) rectangle (3.2,2.2);
+  \draw[green!50!black, line width=1pt] (0,0) rectangle (3.2,2.2);
+  \draw[blue!60!black, line width=1pt] (1.6,0.8) rectangle (4.8,3.0);
+  \node[green!45!black, font=\footnotesize\bfseries, anchor=south west] at (0.05,0.0) {Verdad ($B_{gt}$)};
+  \node[blue!55!black, font=\footnotesize\bfseries, anchor=north east] at (4.75,2.95) {Predicción ($B_p$)};
+  \node[font=\footnotesize\bfseries, text=orange!60!black] at (2.4,1.5) {$\cap$};
+  \node[anchor=west] at (5.6,1.5)
+    {$\displaystyle \mathrm{IoU}=\frac{|B_p \cap B_{gt}|}{|B_p \cup B_{gt}|}$};
+  \node[anchor=west, font=\footnotesize, text=black!65] at (5.6,0.5)
+    {$\mathrm{IoU}\ge 0.5 \Rightarrow$ verdadero positivo};
+\end{tikzpicture}
+\caption{Interpretación geométrica del IoU. El área sombreada en naranja es la intersección
+         entre la caja predicha ($B_p$) y la de referencia ($B_{gt}$); el IoU es el cociente
+         entre esa intersección y la unión de ambas. Un umbral $\mathrm{IoU}\ge 0.5$
+         determina si la detección se considera un verdadero positivo.}
+\label{fig:iou}
+\end{figure} Esta métrica es indispensable en tareas de detección de objetos porque evalúa
 no solo si el modelo identifica correctamente la categoría del artefacto, sino también
 con qué exactitud delimita su posición y extensión en la imagen~\cite{everingham2010pascal}.
 Una localización precisa resulta crítica para tareas curatoriales como la ofuscación
@@ -620,30 +770,24 @@ hussein2021}.
 %Una vez consideradas estas métricas y con el modelo que mejor se adapte a nuestras necesidades se construyo la arquitectura necesaria para un esquema federado , la cual consiste de un servidor en donde se compilan los pesos de los diferentes modelos desplegados en los clientes, en esta sección se experimento con los principales algoritmos de agregación para el modelo general los cuales son :
 \section{Modelo Federado}
  
-La inteligencia artificial con arquitectura federada surge como una respuesta a las
-crecientes preocupaciones por la privacidad y la seguridad de los datos en el entrenamiento
-de modelos de aprendizaje profundo. Su origen se remonta a las investigaciones de Google
-en 2016~\citep{mcmahan2017communication}, con el desarrollo de \textit{Federated Learning},
-una técnica que permite entrenar modelos directamente sobre los datos de cada participante
-sin necesidad de centralizarlos. Esta arquitectura distribuye el proceso de aprendizaje
-entre múltiples nodos como teléfonos inteligentes o servidores institucionales que
-colaboran para construir un modelo común sin compartir información sensible. A lo largo del
-tiempo, la tecnología ha evolucionado incorporando técnicas más avanzadas de agregación de
-parámetros, encriptación homomórfica y aprendizaje con privacidad diferencial, lo que ha
-reforzado su utilidad en entornos donde la confidencialidad de los datos es
+El aprendizaje federado (\textit{Federated Learning}) es una técnica que permite entrenar
+un modelo común a partir de los datos de múltiples participantes sin necesidad de
+centralizarlos. En lugar de reunir todos los datos en un único repositorio, cada nodo
+entrena un modelo local sobre su propia colección y comparte únicamente los parámetros
+resultantes con un servidor de agregación. Propuesta originalmente por
+Google~\citep{mcmahan2017communication}, esta arquitectura ha evolucionado incorporando
+técnicas de agregación de parámetros, encriptación homomórfica y privacidad diferencial que
+refuerzan su utilidad en entornos donde la confidencialidad de los datos es
 crítica~\citep{bonawitz2016practicalsecureaggregationfederated}.
- 
-Actualmente, los modelos federados se aplican en sectores como la salud, la banca, las
-telecomunicaciones y el internet de las cosas (IoT), donde el acceso a datos distribuidos
-es vital y al mismo tiempo restringido. Hospitales, por ejemplo, pueden colaborar para
-mejorar modelos de diagnóstico sin intercambiar historiales clínicos de pacientes. El
-estado del arte incluye innovaciones como el \textit{federated transfer learning}, que
-permite combinar conocimientos de diferentes dominios, y el uso de modelos multimodales
-en entornos federados. A pesar de los avances, persisten desafíos técnicos como la
-heterogeneidad de los datos, las limitaciones de cómputo en los nodos cliente y la
-sincronización eficiente entre rondas. No obstante, la arquitectura federada se consolida
-como una de las líneas más prometedoras para un desarrollo ético y escalable de la
-inteligencia artificial.
+
+En el problema abordado en este trabajo, el aprendizaje federado resulta pertinente por dos
+razones específicas del dominio de los herbarios digitales. En primer lugar, las
+colecciones biológicas operan bajo restricciones institucionales que dificultan la
+centralización de sus imágenes. En segundo lugar, la mayoría de los herbarios no dispone de
+la infraestructura de cómputo necesaria para entrenar de forma autónoma modelos de detección
+de objetos sobre sus propias colecciones, por lo que un esquema colaborativo que reparta el
+esfuerzo de entrenamiento y comparta el conocimiento aprendido entre instituciones ofrece
+una alternativa viable. Estos dos aspectos se desarrollan a continuación.
  
 % ------------------------------------------------------------------
 \subsection{Aprendizaje federado en el contexto de herbarios digitales}
@@ -656,7 +800,28 @@ de sus imágenes: los metadatos de localización de especies amenazadas son conf
 por razones de conservación; los derechos de imagen sobre los especímenes pertenecen a las
 instituciones que los custodian; y los acuerdos de colaboración entre herbarios
 frecuentemente prohíben la redistribución de los datos primarios.
- 
+
+Más allá de las restricciones de acceso, la principal motivación metodológica para adoptar
+un esquema federado surge de la variabilidad interinstitucional de los artefactos
+curatoriales. Aunque los artefactos de identificación y referencia (AIRs) cumplen funciones
+curatoriales equivalentes en las distintas colecciones biológicas escalas, cartas de
+color, etiquetas, sellos y códigos, su apariencia visual, dimensiones, ubicación y diseño
+presentan una importante variabilidad entre instituciones, producto de diferencias
+históricas, administrativas y operativas en los procesos de curaduría y digitalización.
+Esta heterogeneidad constituye un problema de cambio de dominio (\textit{domain shift}) que
+limita la capacidad de generalización de los modelos entrenados de manera centralizada, los
+cuales tienden a quedar sesgados hacia las características de las instituciones con mayor
+volumen de datos.
+
+El esquema federado aborda este problema permitiendo que cada herbario entrene inicialmente
+un detector especializado sobre su propia colección, capturando las particularidades
+locales de sus procesos de curaduría, para luego agregar los modelos en un detector global
+que aprende una representación más abstracta de los AIRs independiente del herbario de
+origen. De este modo, el objetivo no se limita a preservar la privacidad, sino que apunta a
+la generalización entre dominios (\textit{domain generalization})% TODO: agregar cita de domain generalization (p. ej. Wang et al. 2022, IEEE TPAMI) al Referencias.bib
+: un detector robusto frente a la heterogeneidad institucional y capaz de extenderse a
+colecciones no observadas durante el entrenamiento.
+
 El aprendizaje federado permite que el \textbf{Herbario Nacional Colombiano (UNAL)} y el
 \textbf{University of Melbourne Herbarium} colaboren en el entrenamiento de un detector de
 artefactos sin transferir una sola imagen. Adicionalmente, la arquitectura distribuida
@@ -682,15 +847,40 @@ forma local, mientras que el \textit{backbone} del detector se agrega de forma c
  
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.92\textwidth]{00Figuras/federated_herbarium_strategy.jpg}
-    \caption{Arquitectura federada para la detección de artefactos en registros digitales
-             de herbario. Cada nodo institucional (UNAL: 6 clases, Melbourne: 11 clases)
-             entrena localmente un modelo YOLOv8 con sus propios datos, que nunca abandonan
-             la institución. Solo los pesos del \textit{backbone} el extractor de
-             características compartido se envían al servidor de agregación mediante
-             FedAvg. Las cabezas de clasificación locales y las máscaras de clase
-             (destacadas en naranja) permanecen en cada nodo, evitando la confusión entre
-             los vocabularios de etiquetado de ambas instituciones.}
+    \begin{tikzpicture}[
+        font=\small,
+        herb/.style={rectangle, rounded corners, draw=green!55!black, fill=green!8,
+                     line width=0.8pt, align=center, inner sep=5pt, text width=3.4cm},
+        server/.style={rectangle, rounded corners, draw=blue!60!black, fill=blue!10,
+                       line width=0.9pt, align=center, inner sep=6pt, text width=4.6cm},
+        lab/.style={align=center, font=\footnotesize\itshape, text=black!70},
+        flow/.style={-{Stealth[length=3mm]}, line width=1pt, blue!55!black},
+        back/.style={-{Stealth[length=3mm]}, line width=1pt, green!50!black, dashed},
+    ]
+    \node[server] (srv) {\textbf{Modelo global compartido}\\[2pt]
+       aprende a reconocer los artefactos comunes (escalas, etiquetas, sellos, cartas de
+       color, códigos) \emph{sin ver ninguna imagen}};
+
+    \node[herb, below left=18mm and 18mm of srv] (unal)
+       {\textbf{Herbario UNAL}\\[2pt] sus imágenes \emph{nunca salen};\\ entrena con su propio catálogo};
+    \node[herb, below right=18mm and 18mm of srv] (melb)
+       {\textbf{Herbario Melbourne}\\[2pt] sus imágenes \emph{nunca salen};\\ entrena con su propio catálogo};
+
+    \draw[flow] (unal.north) to[bend left=12] node[lab,left=1pt]{envía solo\\lo aprendido} (srv.south west);
+    \draw[flow] (melb.north) to[bend right=12] node[lab,right=1pt]{envía solo\\lo aprendido} (srv.south east);
+    \draw[back] (srv.south west) to[bend left=22] (unal.north east);
+    \draw[back] (srv.south east) to[bend right=22] (melb.north west);
+    \node[lab] at ($(unal.south)!0.5!(melb.south) + (0,-0.55)$)
+      {\textcolor{blue!55!black}{$\rightarrow$ envío de lo aprendido}\qquad
+       \textcolor{green!50!black}{- -$\rightarrow$ devolución del modelo global}};
+    \end{tikzpicture}
+    \caption{Esquema conceptual del aprendizaje federado adoptado en este trabajo. Cada
+             herbario entrena un detector sobre su propia colección y \textbf{sus imágenes
+             nunca abandonan la institución}; solo se comparte con el servidor lo aprendido
+             (los parámetros del modelo). El servidor combina esas contribuciones en un
+             modelo global capaz de reconocer los artefactos comunes a ambas colecciones y
+             lo devuelve a cada herbario, de modo que cada institución se beneficia del
+             conocimiento de la otra sin intercambiar especímenes digitalizados.}
     \label{fig:federated_herbarium}
 \end{figure}
  
@@ -699,8 +889,38 @@ forma local, mientras que el \textit{backbone} del detector se agrega de forma c
 % ------------------------------------------------------------------
  
 El proceso de aprendizaje federado se estructura en fases bien definidas que permiten una
-coordinación eficiente entre clientes y servidor:
- 
+coordinación eficiente entre clientes y servidor. La Figura~\ref{fig:ciclo_federado}
+resume el ciclo iterativo que articula estas fases, las cuales se describen en detalle a
+continuación.
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[
+        font=\small,
+        ph/.style={rectangle, rounded corners, draw=black!60, fill=blue!6,
+                   align=center, inner sep=5pt, text width=2.6cm, line width=0.7pt, minimum height=1.3cm},
+        ar/.style={-{Stealth[length=2.6mm]}, line width=0.9pt, black!65},
+    ]
+    \def\R{3.1cm}
+    \node[ph] (p1) at (90:\R) {\textbf{1. Inicialización}\\ modelo global $w_0$};
+    \node[ph] (p2) at (18:\R) {\textbf{2. Entrenamiento local}\\ cada nodo con $D_k$};
+    \node[ph] (p3) at (-54:\R) {\textbf{3. Comunicación}\\ se envían los pesos};
+    \node[ph] (p4) at (-126:\R) {\textbf{4. Agregación}\\ FedAvg $\to w_{t+1}$};
+    \node[ph] (p5) at (162:\R) {\textbf{5. Criterio de parada}\\ ¿convergió o $t=T_{\max}$?};
+    \draw[ar] (p1) to[bend left=15] (p2);
+    \draw[ar] (p2) to[bend left=15] (p3);
+    \draw[ar] (p3) to[bend left=15] (p4);
+    \draw[ar] (p4) to[bend left=15] (p5);
+    \draw[ar] (p5) to[bend left=15] node[midway,fill=white,font=\footnotesize]{nueva ronda} (p1);
+    \node[align=center,font=\footnotesize\itshape] at (0,0) {Ronda de\\comunicación};
+    \end{tikzpicture}
+    \caption{Ciclo iterativo del entrenamiento federado. Tras la inicialización global, cada
+             ronda repite el entrenamiento local en cada nodo, la comunicación de los
+             parámetros, su agregación en un nuevo modelo global y la evaluación del criterio
+             de parada; mientras este no se cumpla, comienza una nueva ronda.}
+    \label{fig:ciclo_federado}
+\end{figure}
+
 \subsubsection*{Fase 1: Inicialización global}
  
 En esta fase inicial, el servidor central genera un modelo global $w_0$ con parámetros
@@ -729,13 +949,15 @@ actualizado $w_t^{(k,E)}$.
  
 \subsubsection*{Fase 3: Comunicación de parámetros}
  
-Cada cliente transmite sus parámetros actualizados $w_t^{(k,E)}$ al servidor central.
-En este trabajo se utilizó transmisión sin compresión ($\rho = 1$), aunque es posible
-aplicar técnicas de cuantización para reducir el ancho de banda requerido:
- 
+Cada cliente transmitió sus parámetros actualizados $w_t^{(k,E)}$ al servidor central
+mediante el operador de comunicación
+
 \[
-\tilde{w}_t^{(k)} = \mathrm{Comprime}\!\left(w_t^{(k,E)},\, \rho\right)
+\tilde{w}_t^{(k)} = \mathrm{Comprime}\!\left(w_t^{(k,E)},\, \rho\right),
 \]
+
+en el que el factor $\rho$ controla el nivel de compresión. En este trabajo la transmisión
+se realizó sin compresión ($\rho = 1$), de modo que $\tilde{w}_t^{(k)} = w_t^{(k,E)}$.
  
 \subsubsection*{Fase 4: Agregación global}
  
@@ -745,64 +967,91 @@ global $w_{t+1}$ que es redistribuido a todos los nodos.
  
 \subsubsection*{Fase 5: Criterio de parada}
  
-El proceso iterativo se repite hasta cumplirse alguna de las siguientes condiciones:
- 
+Las Fases 2 a 4 constituyen una \emph{ronda} de comunicación. Tras completar la agregación
+global de la ronda $t$, el servidor evaluó si el proceso debía continuar con una nueva ronda
+o detenerse. Para ello se monitoreó la \textit{pérdida global} $\mathcal{L}_t$, definida como
+el promedio ponderado de las pérdidas locales de los clientes al final de la ronda,
+
 \[
-\text{Criterio de parada} =
+\mathcal{L}_t = \sum_{k=1}^{K} \frac{n_k}{N}\, F_k\!\left(w_{t}\right),
+\]
+
+evaluadas sobre el modelo global $w_t$ recién agregado. El entrenamiento federado se detuvo
+al cumplirse alguno de dos criterios: la \textbf{convergencia}, cuando la mejora de la
+pérdida global entre dos rondas consecutivas dejó de ser significativa
+($|\mathcal{L}_t - \mathcal{L}_{t-1}| \leq \varepsilon$), o el \textbf{presupuesto de
+cómputo}, cuando se alcanzó el número máximo de rondas $T_{\max}$. Formalmente,
+
+\[
+\text{Decisión}(t) =
 \begin{cases}
-    \text{Continúa} & \text{si } |\mathcal{L}_t - \mathcal{L}_{t-1}| > \varepsilon
-                       \;\text{ y }\; t < T_{\max} \\
-    \text{Detiene}  & \text{en otro caso}
+    \text{continuar} & \text{si } |\mathcal{L}_t - \mathcal{L}_{t-1}| > \varepsilon
+                       \;\text{ y }\; t < T_{\max}, \\[4pt]
+    \text{detener}   & \text{en otro caso,}
 \end{cases}
 \]
- 
-donde $\mathcal{L}_t$ es la pérdida global promediada en la ronda $t$, $\varepsilon$ es el
-umbral de convergencia y $T_{\max}$ es el número máximo de rondas permitidas.
+
+donde $\varepsilon$ es el umbral de convergencia que fija la mejora mínima considerada
+relevante y $T_{\max}$ el número máximo de rondas permitidas, que acota el costo total de
+comunicación y entrenamiento. La primera condición evita prolongar el proceso cuando el
+modelo global ya no mejora de forma apreciable, mientras que la segunda garantiza la
+terminación del algoritmo aun en ausencia de convergencia. Al detenerse, se retuvo el
+modelo global de la última ronda como modelo federado final.
  
 % ------------------------------------------------------------------
 \subsection{Estrategias para la heterogeneidad de clases entre nodos}
 \label{subsec:estrategias_clases}
 % ------------------------------------------------------------------
  
-El caso concreto de este trabajo presenta un desafío que va más allá del aprendizaje
-federado estándar: los dos nodos participantes no comparten el mismo vocabulario de clases.
-UNAL emplea seis categorías de artefactos y Melbourne emplea once, con correspondencias
+El caso concreto de este trabajo presentó un desafío que va más allá del aprendizaje
+federado estándar: los dos nodos participantes no compartían el mismo vocabulario de clases.
+UNAL empleó seis categorías de artefactos y Melbourne once, con correspondencias
 conceptuales parciales pero sin identidad directa (véase la Tabla~\ref{tab:category_mapping_img}).
-Esto impide una aplicación directa de FedAvg, que asume que todos los nodos comparten
-exactamente la misma arquitectura de salida. A continuación se presentan las tres
-estrategias contempladas, en orden creciente de complejidad.
+Esta diferencia impidió una aplicación directa de FedAvg, que asume que todos los nodos
+comparten exactamente la misma arquitectura de salida y, en particular, la misma cabeza de
+clasificación: si las salidas no representan las mismas clases en todos los nodos, promediar
+sus pesos mezcla categorías heterogéneas y degrada el modelo global. Para resolver este
+conflicto se contemplaron tres estrategias, descritas a continuación en orden creciente de
+complejidad y de preservación de la información original de cada colección.
  
 \subsubsection{Estrategia 1: Espacio de clases unificado}
  
-La aproximación más sencilla consiste en definir un vocabulario global de clases fusionando
+La aproximación más sencilla consistió en definir un vocabulario global de clases fusionando
 los esquemas de ambas instituciones mediante el mapeo conceptual de la
-Tabla~\ref{tab:category_mapping_img}. Las once etiquetas de Melbourne se colapsan en los seis
-grupos conceptuales de UNAL, de modo que ambos nodos operan con una cabeza de clasificación
-idéntica de seis salidas. La agregación FedAvg puede aplicarse sin modificaciones porque
-las arquitecturas son plenamente compatibles.
- 
-La principal limitación de esta estrategia es la pérdida de granularidad: al colapsar
-\texttt{small database label}, \texttt{full database label} y \texttt{database label} en
-una única clase \textit{Códigos e identificadores}, el modelo pierde la capacidad de
-distinguir entre etiquetas de base de datos de distintos tamaños, información que puede
-ser relevante para tareas curatoriales específicas de Melbourne.
+Tabla~\ref{tab:category_mapping_img}. Cada una de las once etiquetas de Melbourne se asignó
+al grupo conceptual de UNAL con el que guarda correspondencia funcional, de manera que las
+once categorías originales se colapsaron en los seis grupos comunes (códigos e
+identificadores, referencia de color, descripciones y anotaciones, encabezados
+institucionales, escala métrica y sellos). Tras este mapeo, ambos nodos operaron sobre un
+mismo espacio de salida de seis clases con una cabeza de clasificación idéntica, por lo que
+la agregación FedAvg pudo aplicarse sin modificaciones: al representar las salidas las mismas
+categorías en los dos nodos, el promedio de pesos resulta semánticamente coherente.
+
+La principal limitación de esta estrategia fue la pérdida de granularidad inherente al
+colapso de categorías. Por ejemplo, al fusionar \texttt{small database label},
+\texttt{full database label} y \texttt{database label} en la única clase \textit{Códigos e
+identificadores}, el modelo perdió la capacidad de distinguir entre etiquetas de base de
+datos de distintos tamaños, una distinción que puede ser relevante para tareas curatoriales
+específicas de Melbourne. En consecuencia, esta estrategia favoreció la simplicidad y la
+compatibilidad directa con FedAvg a costa de descartar parte de la información taxonómica
+propia de cada institución, lo que motivó la exploración de las dos estrategias siguientes.
  
 \subsubsection{Estrategia 2: \textit{Backbone} compartido con cabezas locales}
  
-Una alternativa más flexible consiste en separar el modelo en dos componentes con
+Una alternativa más flexible consistió en separar el modelo en dos componentes con
 comportamientos distintos durante la federación:
- 
+
 \begin{itemize}
     \item \textbf{\textit{Backbone} (capas convolucionales):} aprende representaciones
     visuales generales bordes, texturas, formas independientes del esquema de etiquetado.
-    Este componente \emph{sí} se comparte y se agrega mediante FedAvg.
- 
+    Este componente \emph{sí} se compartió y se agregó mediante FedAvg.
+
     \item \textbf{Cabeza de clasificación:} mapea las representaciones visuales a las clases
-    propias de cada institución. Este componente \emph{permanece local} en cada nodo y no
-    participa en la agregación.
+    propias de cada institución. Este componente \emph{permaneció local} en cada nodo y no
+    participó en la agregación.
 \end{itemize}
- 
-La actualización global se restringe entonces al \textit{backbone}:
+
+De este modo, la actualización global se restringió al \textit{backbone}:
  
 \[
 w_{t+1}^{\mathrm{back}} = \sum_{k \in \{\mathrm{UNAL},\,\mathrm{Melb}\}}
@@ -812,23 +1061,24 @@ w_{t+1}^{\mathrm{back}} = \sum_{k \in \{\mathrm{UNAL},\,\mathrm{Melb}\}}
 La intuición detrás de esta estrategia es que reconocer visualmente un sello institucional
 o una escala métrica comparte características de bajo nivel gradientes de color, patrones
 de texto, contraste independientemente de cómo se denomine esa clase en cada institución.
-El \textit{backbone} federado aprende esas características de forma conjunta; cada nodo las
-especializa a través de su propia cabeza. Esta estrategia preserva la granularidad de ambos
-esquemas y resulta especialmente atractiva cuando los vocabularios de clase son
-substancialmente distintos.
+El \textit{backbone} federado aprendía esas características de forma conjunta, mientras que
+cada nodo las especializaba a través de su propia cabeza. Esta estrategia preservó la
+granularidad de ambos esquemas y resultó especialmente atractiva cuando los vocabularios de
+clase son sustancialmente distintos; su limitación fue que la cabeza de clasificación, al no
+federarse, no se beneficia del conocimiento aprendido en las demás instituciones.
  
 \subsubsection{Estrategia 3: Espacio de \textit{embedding} compartido con máscaras de clase}
 \label{subsubsec:estrategia3}
  
-Esta es la estrategia adoptada en el presente trabajo. En lugar de restringir la
-federación al \textit{backbone} o de colapsar los vocabularios, se define un espacio de
+Esta fue la estrategia adoptada en el presente trabajo. En lugar de restringir la
+federación al \textit{backbone} o de colapsar los vocabularios, se definió un espacio de
 salida unificado con $C = C_{\mathrm{UNAL}} + C_{\mathrm{Melbourne}} = 6 + 11 = 17$
-clases. El modelo completo incluyendo la cabeza de clasificación tiene arquitectura
-idéntica en todos los nodos y participa íntegramente en la agregación FedAvg. La clave que
-resuelve el conflicto entre vocabularios es el uso de \textbf{máscaras de clase} durante
+clases. El modelo completo incluyendo la cabeza de clasificación tuvo arquitectura
+idéntica en todos los nodos y participó íntegramente en la agregación FedAvg. La clave que
+resolvió el conflicto entre vocabularios fue el uso de \textbf{máscaras de clase} durante
 el entrenamiento local.
- 
-Formalmente, para cada cliente $k$, se define una máscara binaria
+
+Formalmente, para cada cliente $k$, se definió una máscara binaria
 $m_k \in \{0,1\}^C$ tal que:
  
 \[
@@ -839,7 +1089,7 @@ m_k^{(c)} =
 \end{cases}
 \]
  
-Durante el cómputo de la pérdida local, el gradiente se anula para las clases
+Durante el cómputo de la pérdida local, el gradiente se anuló para las clases
 desconocidas en el nodo $k$:
  
 \[

@@ -7,6 +7,7 @@ import numpy as np
 
 from client import FederatedClient, EnhancedFederatedClient
 from metrics import MetricsTracker
+from class_mask import build_shared_yolo
 from collections import defaultdict
 from pathlib import Path
 from datetime import datetime
@@ -227,156 +228,141 @@ class DynamicWeighting:
         """Update client performance history"""
         self.performance_history[client_id].append(metrics)
         
-    def calculate_weights(self) -> List[float]:
-        """Calculate client weights based on recent performance"""
+    def calculate_weights(self, client_ids: List[str] = None) -> List[float]:
+        """Calculate client weights based on recent performance.
+
+        ``client_ids`` must be the *ordered* ids matching the client list passed to
+        aggregation (fixes the previous bug where lookups used range(n) keys that
+        never matched the stored "clientX" ids, silently yielding equal weights).
+        """
+        ids = client_ids if client_ids is not None else list(self.performance_history.keys())
         weights = []
-        for client_id in range(self.num_clients):
-            history = self.performance_history[str(client_id)]
+        for cid in ids:
+            history = self.performance_history.get(cid, [])
             if not history:
                 weights.append(1.0)
                 continue
-                
-            # Use recent mAP as weight
-            recent_map = history[-1].get('mAP', 0)
-            weights.append(max(0.1, recent_map))  # Ensure minimum weight
-            
-        # Normalize weights
-        total = sum(weights)
-        return [w/total for w in weights]
+            weights.append(max(0.1, history[-1].get('mAP', 0)))
+        total = sum(weights) or 1.0
+        return [w / total for w in weights]
 
 
 
 class FederatedServer:
-    """Central server for federated learning coordination"""
-    def __init__(self, 
+    """Central server for synchronized federated learning (shared embedding space).
+
+    Holds a single global model with ``num_classes`` outputs and a domain-neutral
+    pretrained backbone. Every round it aggregates the clients' full models
+    (trunk + masked heads) and redistributes them, so the shared trunk stays in
+    one loss basin and a genuinely shared representation emerges.
+    """
+    def __init__(self,
                  aggregator: FederatedAggregator,
-                 model_save_path: str = "/Volumes/ADATA HD680/Shared/Files From d.localized/Maestria/tesis/herbario/federated_learning/"):
+                 num_classes: int,
+                 class_names: Dict[int, str] = None,
+                 model_save_path: str = "/Volumes/ADATA HD680/Shared/Files From d.localized/Maestria/tesis/herbario/federated_learning/federated_models"):
         self.aggregator = aggregator
+        self.num_classes = num_classes
+        self.class_names = class_names
         self.model_save_path = Path(model_save_path)
-        self.model_save_path.mkdir(exist_ok=True)
-        self.global_model = YOLO('yolov8n.pt')
+        self.model_save_path.mkdir(parents=True, exist_ok=True)
+        self.global_model = build_shared_yolo(num_classes, class_names)
+        # The canonical global weights live as a state_dict (the source of truth),
+        # so that fusing a model during evaluation never corrupts them.
+        self.global_state = self._transferable_state(self.global_model)
         self.round = 0
-        
-    def aggregate_models(self, 
-                        clients: List[FederatedClient], 
-                        client_weights: List[float] = None):
-        """Aggregate client models using the selected strategy"""
+
+    @staticmethod
+    def _transferable_state(model) -> Dict[str, torch.Tensor]:
+        """Full state_dict (params + BN buffers) minus the non-float BN counters."""
+        return {
+            k: v.detach().clone()
+            for k, v in model.model.state_dict().items()
+            if not k.endswith("num_batches_tracked")
+        }
+
+    def get_global_state(self) -> Dict[str, torch.Tensor]:
+        return {k: v.clone() for k, v in self.global_state.items()}
+
+    def make_eval_model(self):
+        """Build a fresh (disposable) 17-class model holding the current global
+        weights. Used for evaluation so the canonical weights are never fused."""
+        model = build_shared_yolo(self.num_classes, self.class_names)
+        own = model.model.state_dict()
+        filtered = {k: v for k, v in self.global_state.items()
+                    if k in own and own[k].shape == v.shape}
+        model.model.load_state_dict(filtered, strict=False)
+        return model
+
+    def aggregate_models(self,
+                         clients: List[FederatedClient],
+                         client_weights: List[float] = None):
+        """FedAvg-aggregate the clients' full models into the global state."""
         if client_weights is None:
             client_weights = [1.0] * len(clients)
-            
+
         client_models = [client.get_model_params() for client in clients]
-        aggregated_params = self.aggregator.aggregate(client_models, client_weights)
-        
-        # Update global model, ensuring shapes align or recomputing if possible
-        with torch.no_grad():
-            for name, param in self.global_model.model.named_parameters():
-                if name not in aggregated_params:
-                    logger.warning(f"Aggregated parameters missing '{name}'; keeping global value")
-                    continue
-                agg = aggregated_params[name]
-                if agg.shape != param.data.shape:
-                    # attempt to re-aggregate using only clients with matching shape
-                    matching_idxs = [i for i, m in enumerate(client_models)
-                                     if name in m and tuple(m[name].shape) == tuple(param.data.shape)]
-                    if matching_idxs:
-                        logger.warning(
-                            f"Shape mismatch for '{name}' (global {tuple(param.data.shape)} vs agg {tuple(agg.shape)}); "
-                            "recomputing using {len(matching_idxs)} compatible clients"
-                        )
-                        wts = [client_weights[i] for i in matching_idxs]
-                        total_w = float(sum(wts))
-                        if total_w == 0:
-                            norm_w = [1.0/len(wts)] * len(wts)
-                        else:
-                            norm_w = [w/total_w for w in wts]
-                        agg = sum(norm * client_models[i][name] for norm, i in zip(norm_w, matching_idxs))
-                    else:
-                        logger.warning(
-                            f"Cannot update '{name}': no client has matching shape {tuple(param.data.shape)}. Skipping."
-                        )
-                        continue
-                param.data.copy_(agg)
-        
+        aggregated = self.aggregator.aggregate(client_models, client_weights)
+
+        ref = self.global_state
+        filtered = {k: v for k, v in aggregated.items()
+                    if k in ref and ref[k].shape == v.shape}
+        missing = [k for k in ref if k not in filtered]
+        if missing:
+            logger.warning(f"aggregate: {len(missing)} global tensors not updated this round")
+        new_state = {k: v.clone() for k, v in self.global_state.items()}
+        new_state.update({k: v.detach().clone() for k, v in filtered.items()})
+        self.global_state = new_state
+
         self.round += 1
         self._save_model()
-        
+
     def _save_model(self):
-        """Save the current global model"""
+        """Save the current global model as a full YOLO checkpoint (loadable directly)."""
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         save_path = self.model_save_path / f"global_model_round_{self.round}_{timestamp}.pt"
-        torch.save(self.global_model.model.state_dict(), save_path)
+        model = self.make_eval_model()
+        model.model.names = self.class_names or model.model.names
+        torch.save({"model": model.model, "train_args": {}}, save_path)
+        self.last_save_path = save_path
         logger.info(f"Saved global model to {save_path}")
-        
+
     def distribute_model(self, clients: List[FederatedClient]):
-        """Distribute global model to all clients, skipping incompatible layers"""
-        global_params = {name: param.data.clone() 
-                        for name, param in self.global_model.model.named_parameters()}
+        """Push the global weights (params + BN buffers) to every client."""
+        state = self.get_global_state()
         for client in clients:
-            compatible = {}
-            for name, tensor in global_params.items():
-                # only copy if client has same shape
-                client_param = client.model.model.named_parameters()
-                # we can't iterate easily here so catch in try
-                try:
-                    local = dict(client.model.model.named_parameters())[name]
-                    if local.data.shape == tensor.shape:
-                        compatible[name] = tensor
-                    else:
-                        logger.warning(
-                            f"Skipping layer '{name}' for client {client.client_id}: "
-                            f"global shape {tuple(tensor.shape)} != local {tuple(local.data.shape)}"
-                        )
-                except KeyError:
-                    logger.warning(f"Client {client.client_id} missing parameter '{name}', skipping")
-            client.update_model_params(compatible)
-            
-            
-            
+            client.update_model_params(state)
+
+
 class EnhancedFederatedServer(FederatedServer):
-    """Enhanced server with metrics tracking and dynamic weighting"""
-    def __init__(self, 
+    """Server with metrics tracking; evaluation is driven by the trainer (which
+    owns the per-client evaluation datasets in the shared label space)."""
+    def __init__(self,
                  aggregator: FederatedAggregator,
+                 num_classes: int,
+                 class_names: Dict[int, str] = None,
                  model_save_path: str = "/Volumes/ADATA HD680/Shared/Files From d.localized/Maestria/tesis/herbario/federated_learning/federated_models",
                  metrics_tracker: MetricsTracker = None,
                  dynamic_weighting: DynamicWeighting = None):
-        super().__init__(aggregator, model_save_path)
+        super().__init__(aggregator, num_classes, class_names, model_save_path)
         self.metrics_tracker = metrics_tracker or MetricsTracker()
         self.dynamic_weighting = dynamic_weighting
-        
-    def aggregate_models(self, clients: List[EnhancedFederatedClient]):
-        """Aggregate with dynamic weights and track metrics"""
-        # Get client weights
-        if self.dynamic_weighting:
-            client_weights = self.dynamic_weighting.calculate_weights()
-        else:
-            client_weights = [1.0] * len(clients)
-            
-        # Aggregate models
-        super().aggregate_models(clients, client_weights)
-        
-        # Evaluate and track metrics
-        global_metrics = self._evaluate_global_model()
-        self.metrics_tracker.add_metric(
-            type(self.aggregator).__name__,
-            self.round,
-            global_metrics
-        )
-        
-        # Update client performance history
-        if self.dynamic_weighting:
-            for client in clients:
-                metrics = client.evaluate()
-                self.dynamic_weighting.update_performance(client.client_id, metrics)
-                
-    def _evaluate_global_model(self) -> Dict[str, float]:
-        """Evaluate global model performance"""
+
+    @staticmethod
+    def val_metrics(eval_model, data_yaml: str) -> Dict[str, float]:
+        """Validate a (disposable) model on a 17-class YAML and return scalar metrics."""
         try:
-            results = self.global_model.val()
+            results = eval_model.val(data=str(data_yaml), verbose=False)
             return {
-                'mAP': results.box.map,
-                'precision': results.box.p,
-                'recall': results.box.r
+                'mAP': float(results.box.map),
+                'mAP50': float(results.box.map50),
+                'precision': float(results.box.mp),
+                'recall': float(results.box.mr),
             }
         except Exception as e:
             logger.error(f"Global model evaluation failed: {str(e)}")
-            return {'mAP': 0.0, 'precision': 0.0, 'recall': 0.0}
+            return {'mAP': 0.0, 'mAP50': 0.0, 'precision': 0.0, 'recall': 0.0}
+
+    def evaluate_global_on(self, data_yaml: str) -> Dict[str, float]:
+        """Validate the global weights on a 17-class dataset YAML (fresh model)."""
+        return self.val_metrics(self.make_eval_model(), data_yaml)

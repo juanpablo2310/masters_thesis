@@ -211,3 +211,80 @@ El F1-score balancea ambos regímenes:
 La brecha consistente $\Delta \in [0.000,\,0.010]$ en todas las métricas y todas
 las estrategias confirma que el origen del conjunto de datos (UN vs.\ Melbourne) es una
 fuente de varianza mayor que la elección del algoritmo de agregación.
+
+% ==================================================================
+\section{Análisis por clase: modelo local frente a federado}
+% ==================================================================
+
+Las métricas agregadas de la sección anterior resumen el desempeño global, pero ocultan el
+comportamiento de cada categoría de artefacto. Para examinarlo con mayor detalle, se comparó,
+por clase, el modelo entrenado localmente en cada institución (\textit{local}) frente al
+modelo obtenido tras el aprendizaje federado (\textit{federado}). Para cada cliente se
+reportan cinco indicadores por clase Precisión, Exhaustividad (\textit{recall}),
+$\mathrm{mAP}@0.5$, $\mathrm{mAP}@0.5{:}0.95$ e IoU medio y, adicionalmente, el cambio
+absoluto $\Delta = \text{federado} - \text{local}$ en $\mathrm{mAP}@0.5$, que cuantifica
+directamente la ganancia o pérdida atribuible a la federación.
+
+\subsection{Herbario de Melbourne}
+
+En el conjunto de Melbourne, el modelo federado mejoró o igualó al modelo local en
+prácticamente todas las clases (Figura~\ref{fig:panel_melu}). La Figura~\ref{fig:delta_melu}
+muestra que las ganancias más pronunciadas en $\mathrm{mAP}@0.5$ se concentraron en clases
+históricamente difíciles o subrepresentadas, como \texttt{swing tag} ($+0.652$),
+\texttt{number} ($+0.417$), \texttt{handwritten data} ($+0.309$),
+\texttt{annotation label} ($+0.299$) y \texttt{stamp} ($+0.161$), mientras que las clases
+ya bien resueltas de forma local (\texttt{scale}, \texttt{database label}, \texttt{swatch})
+se mantuvieron estables. Este patrón es consistente con la hipótesis de que la federación
+transfiere conocimiento visual útil desde el nodo con mayor volumen de datos, reforzando
+especialmente el reconocimiento de los artefactos con menos ejemplos propios.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{00Figuras/comparison_img/client2_panel_all_metrics.png}
+    \caption{Comparación por clase entre el modelo local y el federado para el Herbario de
+             Melbourne, en las cinco métricas consideradas. En la mayoría de las clases el
+             modelo federado (naranja) iguala o supera al local (azul).}
+    \label{fig:panel_melu}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{00Figuras/comparison_img/client2_mAP50_delta.png}
+    \caption{Cambio en $\mathrm{mAP}@0.5$ del modelo federado respecto al local
+             ($\Delta = \text{federado} - \text{local}$) por clase, para el Herbario de
+             Melbourne. Las barras positivas indican mejora aportada por la federación.}
+    \label{fig:delta_melu}
+\end{figure}
+
+\subsection{Herbario Nacional Colombiano (UNAL)}
+
+En el caso del conjunto UNAL, el modelo federado presentó actualmente un descenso marcado
+del desempeño respecto al modelo local en todas las clases
+(Figuras~\ref{fig:panel_unal} y~\ref{fig:delta_unal}). Este comportamiento es anómalo y
+contrasta con el observado en Melbourne, por lo que su origen se encuentra \textbf{en proceso
+de investigación}. Entre las posibles causas a verificar se encuentran el efecto de las
+máscaras de clase y la diferencia de tamaño entre los espacios de etiquetado, el dominio de
+los gradientes del nodo con mayor volumen de datos (Melbourne) durante la agregación, y
+posibles inconsistencias en la normalización o el mapeo de clases del nodo UNAL. Por esta
+razón, y hasta esclarecer la causa, no se extraen conclusiones sobre el desempeño federado
+en UNAL; los resultados se incluyen únicamente con fines de transparencia y como punto de
+partida para el diagnóstico.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{00Figuras/comparison_img/client1_panel_all_metrics.png}
+    \caption{Comparación por clase entre el modelo local y el federado para el Herbario
+             Nacional Colombiano (UNAL). El modelo federado (naranja) cae por debajo del
+             local (azul) en todas las clases; este resultado se encuentra bajo
+             investigación.}
+    \label{fig:panel_unal}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{00Figuras/comparison_img/client1_mAP50_delta.png}
+    \caption{Cambio en $\mathrm{mAP}@0.5$ del modelo federado respecto al local por clase,
+             para el Herbario UNAL. Las barras negativas reflejan la caída de desempeño aún
+             no explicada del modelo federado en este conjunto.}
+    \label{fig:delta_unal}
+\end{figure}

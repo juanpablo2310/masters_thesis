@@ -460,7 +460,7 @@ class FederatedComparison:
             logger.warning(f"Labels dir not found for {client_id}: {labels_dir}")
 
         # Write global YAML
-        total = self.space.total_classes
+        total = self.space.total_classes 
         names = {i: self.global_names.get(i, f"class_{i}") for i in range(total)}
         yaml_path = tmp_root / "global_eval.yaml"
         with open(yaml_path, "w") as f:
@@ -468,6 +468,7 @@ class FederatedComparison:
                 {
                     "path": str(tmp_root),
                     "val": "images",
+                    "train" : "images",
                     "names": names,
                     "nc": total,
                 },
