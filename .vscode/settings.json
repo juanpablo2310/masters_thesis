@@ -1,0 +1,25 @@
+{
+    "sqltools.connections": [
+        {
+            "ssh": "Disabled",
+            "previewLimit": 50,
+            "server": "localhost",
+            "port": 5432,
+            "driver": "PostgreSQL",
+            "name": "MyServer",
+            "username": "juanpablovargasacosta",
+            "database": "HerbarioDB"
+        }
+    ],
+    "files.exclude": {
+        "**/.git": true,
+        "**/.svn": true,
+        "**/.hg": true,
+        "**/.DS_Store": true,
+        "**/Thumbs.db": true,
+        "**/0000.aux": true,
+        "**/0000.log": true,
+        "**/0000.gz": true,
+        "**/0000.out": true
+    }
+}

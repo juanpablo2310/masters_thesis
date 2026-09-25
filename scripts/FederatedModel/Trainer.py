@@ -63,12 +63,26 @@ class EnhancedFederatedTrainer(FederatedTrainer):
                  epochs_per_round: int = 1,
                  local_images: int = 300,
                  weighting: str = "equal",            # "equal" | "data"
+                 local_lr: float = 0.01,              # explicit LR per round (no warmup)
+                 warmup_epochs: float = 0.0,
+                 imgsz: int = 640,                    # lower (416/320) is much faster on CPU
+                 batch: int = 16,                     # lower (4/8) cuts peak RAM
+                 workers: int = 0,                    # 0 = no dataloader multiprocessing (RAM/macOS-safe)
+                 eval_every: int = 5,
+                 eval_images: int = 250,
                  early_stopping: Optional[EarlyStoppingCallback] = None,
                  visualization_tools: Optional[VisualizationTools] = None,
                  cross_validator: Optional[CrossValidator] = None):
         super().__init__(server, clients, rounds, epochs_per_round)
         self.local_images = local_images
         self.weighting = weighting
+        self.local_lr = local_lr
+        self.warmup_epochs = warmup_epochs
+        self.imgsz = imgsz
+        self.batch = batch
+        self.workers = workers
+        self.eval_every = eval_every          # global eval is costly; do it periodically
+        self.eval_images = eval_images        # cap val images for a fast convergence proxy
         self.early_stopping = early_stopping
         self.visualization_tools = visualization_tools
         self.cross_validator = cross_validator  # kept for API compat; not used in B
@@ -89,7 +103,7 @@ class EnhancedFederatedTrainer(FederatedTrainer):
         eval_model = self.server.make_eval_model()
         per_client = []
         for client in self.clients:
-            m = self.server.val_metrics(eval_model, client.get_eval_dataset())
+            m = self.server.val_metrics(eval_model, client.get_eval_dataset(self.eval_images))
             m["client"] = client.client_id
             per_client.append(m)
             logger.info(
@@ -120,7 +134,12 @@ class EnhancedFederatedTrainer(FederatedTrainer):
             for ci, client in enumerate(self.clients):
                 if client.train_round(local_images=self.local_images,
                                       epochs=self.epochs_per_round,
-                                      seed=round_num * 1000 + ci):
+                                      seed=round_num * 1000 + ci,
+                                      lr0=self.local_lr,
+                                      warmup_epochs=self.warmup_epochs,
+                                      imgsz=self.imgsz,
+                                      batch=self.batch,
+                                      workers=self.workers):
                     successful.append(client)
 
             if not successful:
@@ -128,17 +147,21 @@ class EnhancedFederatedTrainer(FederatedTrainer):
                 continue
 
             self.server.aggregate_models(successful, self._client_weights(successful))
-            current_score = self._evaluate_global()
-            logger.info(f"Round {round_num + 1}: global mAP50 = {current_score:.4f}")
 
-            if self.visualization_tools:
-                self.visualization_tools.plot_convergence(
-                    self.server.metrics_tracker.metrics, f"round_{round_num + 1}"
-                )
+            # Global evaluation is costly — run it periodically and on the last round.
+            is_eval_round = ((round_num + 1) % self.eval_every == 0) or (round_num + 1 == self.rounds)
+            if is_eval_round:
+                current_score = self._evaluate_global()
+                logger.info(f"Round {round_num + 1}: global mAP50 = {current_score:.4f}")
 
-            if self.early_stopping and self.early_stopping(current_score):
-                logger.info("Early stopping triggered")
-                break
+                if self.visualization_tools:
+                    self.visualization_tools.plot_convergence(
+                        self.server.metrics_tracker.metrics, f"round_{round_num + 1}"
+                    )
+
+                if self.early_stopping and self.early_stopping(current_score):
+                    logger.info("Early stopping triggered")
+                    break
 
         for client in self.clients:
             client.cleanup()

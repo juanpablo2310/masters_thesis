@@ -1,4 +1,5 @@
 from pathlib import Path
+import os
 import yaml
 import torch
 from ultralytics import YOLO
@@ -10,6 +11,14 @@ from class_mask import SharedClassSpace, GradientMasker, build_global_dataset, b
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Where ultralytics writes per-round run dirs. Override via env var (e.g. on Colab:
+# os.environ["HERBARIO_RUNS_DIR"] = "/content/runs") without editing the code.
+DEFAULT_RUNS_DIR = "/Volumes/ADATA HD680/Shared/Files From d.localized/Maestria/tesis/herbario/federated_learning/runs"
+
+
+def _runs_dir() -> str:
+    return os.environ.get("HERBARIO_RUNS_DIR", DEFAULT_RUNS_DIR)
 
 class FederatedClient:
     """Represents a client in the federated learning system"""
@@ -170,8 +179,12 @@ class SharedEmbeddingClient(EnhancedFederatedClient):
         except Exception:
             return 0
 
-    def get_eval_dataset(self) -> Path:
-        """Build (and cache) the full 17-class val dataset for global evaluation."""
+    def get_eval_dataset(self, max_val_images: int = None) -> Path:
+        """Build (and cache) the 17-class val dataset for global evaluation.
+
+        ``max_val_images`` caps the val set (random subset) to speed up the
+        per-round global evaluation during training.
+        """
         if self._eval_yaml is None:
             self._eval_yaml, self._eval_tmp_root = build_global_dataset(
                 self.config_path,
@@ -179,6 +192,8 @@ class SharedEmbeddingClient(EnhancedFederatedClient):
                 self.shared_class_space.get_global_names(),
                 self.shared_class_space.total_classes,
                 splits=("val",),
+                max_val_images=max_val_images,
+                seed=0,
             )
         return self._eval_yaml
 
@@ -201,7 +216,10 @@ class SharedEmbeddingClient(EnhancedFederatedClient):
             for p, s in zip(GradientMasker.head_param_list(self.model), snapshot):
                 p.data[idx] = s.to(p.dtype).to(p.device)
 
-    def train_round(self, local_images: int = None, epochs: int = 1, seed: int = None) -> bool:
+    def train_round(self, local_images: int = None, epochs: int = 1, seed: int = None,
+                    lr0: float = 0.01, warmup_epochs: float = 0.0,
+                    optimizer: str = "SGD", imgsz: int = 640,
+                    batch: int = 16, workers: int = 0) -> bool:
         """Run one federated round of local training from the current (global) weights.
 
         A fresh random subsample of ``local_images`` training images is used each
@@ -218,20 +236,49 @@ class SharedEmbeddingClient(EnhancedFederatedClient):
             self.shared_class_space.total_classes,
             splits=("train", "val"),
             max_train_images=local_images,
-            seed=seed,
+            max_val_images=25,   # train-time val is unused (global eval is separate);
+            seed=seed,           # keep it tiny so any incidental ultralytics val is fast
         )
+
+        # Rebuild a clean YOLO from the current (distributed) weights so each round's
+        # train() starts from a freshly-constructed model. ultralytics reloads
+        # self.model from best.pt after train(), and calling train() again on that
+        # reloaded object raises a 'model' KeyError on newer versions.
+        state = {
+            k: v.detach().clone()
+            for k, v in self.model.model.state_dict().items()
+            if not k.endswith("num_batches_tracked")
+        }
+        self.model = build_shared_yolo(
+            self.shared_class_space.total_classes,
+            self.shared_class_space.get_global_names(),
+            pretrained=None,
+        )
+        own = self.model.model.state_dict()
+        self.model.model.load_state_dict(
+            {k: v for k, v in state.items() if k in own and own[k].shape == v.shape},
+            strict=False,
+        )
+
         # Snapshot the unknown-class head rows from the just-distributed (global) model.
         unknown_snapshot = self._snapshot_unknown_head()
         try:
             self.model.train(
                 data=str(data_yaml),
                 epochs=epochs,
-                imgsz=640,
-                batch=16,
+                imgsz=imgsz,
+                batch=batch,
+                workers=workers,      # 0 = no dataloader multiprocessing (lower RAM, macOS-safe)
+                # Federated rounds are short: warmup must be 0 and the LR explicit,
+                # otherwise every 1-epoch round stays in warmup and never learns.
+                optimizer=optimizer,
+                lr0=lr0,
+                warmup_epochs=warmup_epochs,
+                cos_lr=False,
                 val=False,            # global eval is done centrally by the trainer
                 plots=False,
                 verbose=False,
-                project='/Volumes/ADATA HD680/Shared/Files From d.localized/Maestria/tesis/herbario/federated_learning/runs',
+                project=_runs_dir(),
                 device='cuda' if torch.cuda.is_available() else 'cpu',
             )
             # Enforce the class mask: restore the unknown rows to their global value,
@@ -239,7 +286,7 @@ class SharedEmbeddingClient(EnhancedFederatedClient):
             self._restore_unknown_head(unknown_snapshot)
             return True
         except Exception as e:
-            logger.error(f"SharedEmbeddingClient {self.client_id} round failed: {e}")
+            logger.error(f"SharedEmbeddingClient {self.client_id} round failed: {e}", exc_info=True)
             return False
 
     # Backwards-compatible alias

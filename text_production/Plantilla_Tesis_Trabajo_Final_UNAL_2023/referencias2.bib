@@ -1,0 +1,489 @@
+% ============================================================
+%  referencias.bib
+%  Archivo unificado y verificado — Tesis de Maestría
+%  Detección de artefactos en registros digitales de herbario
+%
+%  NOTAS DE LIMPIEZA (respecto a versiones anteriores):
+%  - Se eliminaron las siguientes entradas duplicadas o redundantes:
+%      * lin2014microsoft  →  reemplazada por la versión completa COCOdataset
+%      * McMahan2017       →  reemplazada por la versión @inproceedings mcmahan2017communication
+%      * nelsonEtAl2012   →  corregido tipo @techreport → @article (es artículo en revista)
+%      * soltis2017       →  la clave era engañosa; renombrada a willis2020
+%  - Se corrigió el campo @String para las revistas más frecuentes.
+%  - Se agregó la referencia nueva: guo2025review (Artificial Intelligence Review 2025).
+% ============================================================
+
+% ---- Abreviaciones de revistas frecuentes ------------------
+@String{APS    = {Applications in Plant Sciences}}
+@String{BIOSCI = {BioScience}}
+@String{ECO    = {Ecological Informatics}}
+@String{ECOMON = {Ecological Monographs}}
+@String{NPH    = {New Phytologist}}
+@String{PPP    = {PLANTS, PEOPLE, PLANET}}
+@String{PLANTS = {Plants}}
+@String{PHYTO  = {PhytoKeys}}
+@String{SENSORS= {Sensors}}
+@String{NATCOM = {Nature Communications}}
+@String{AIREV  = {Artificial Intelligence Review}}
+@String{CVPR   = {Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR)}}
+@String{ICCV   = {Proceedings of the IEEE International Conference on Computer Vision (ICCV)}}
+@String{IEEE_TPAMI = {IEEE Transactions on Pattern Analysis and Machine Intelligence}}
+
+% ============================================================
+%  A. HERBARIOS: COLECCIONES, IMPORTANCIA Y USO
+% ============================================================
+
+@article{thiers2024,
+  author  = {Thiers, Barbara M.},
+  title   = {The World's Herbaria 2024: A Summary Report Based on Data from
+             {Index Herbariorum}},
+  journal = {Index Herbariorum Reports},
+  year    = {2025},
+  volume  = {7},
+  note    = {Issue 7.0, published January 2025. New York Botanical Garden.
+             \url{http://sweetgum.nybg.org/science/ih/}},
+}
+
+@article{desmedt2024,
+  author  = {De Smedt, Sofie and Bogaerts, Ann and De Meeter, Niko and
+             Dillen, Mathias and Engledow, Henry and Van Wambeke, Paul and
+             Leliaert, Frederik and Groom, Quentin},
+  title   = {Ten lessons learned from the mass digitisation of a herbarium
+             collection},
+  journal = PHYTO,
+  year    = {2024},
+  volume  = {244},
+  pages   = {23--37},
+  doi     = {10.3897/phytokeys.244.120112},
+}
+
+@article{paton2025,
+  author  = {Paton, Alan J.},
+  title   = {Life after herbarium digitisation: Physical and digital
+             collections, curation and use},
+  journal = PPP,
+  year    = {2025},
+  doi     = {10.1002/ppp3.70078},
+  note    = {Published online September 11, 2025},
+}
+
+@article{klopper2025,
+  author  = {Klopper, Ronell R.},
+  title   = {Digitisation of herbarium specimens to the benefit of research:
+             An {African} perspective focusing on {South Africa} and
+             {Western Indian Ocean Island} states},
+  journal = PPP,
+  year    = {2025},
+  doi     = {10.1002/ppp3.70117},
+  note    = {Published online October 24, 2025},
+}
+
+@article{heberling2019,
+  author  = {Heberling, J. Mason and Isaac, Bryan L.},
+  title   = {Changing Uses of Herbarium Data in an Era of Global Change:
+             An Overview Using Automated Content Analysis},
+  journal = BIOSCI,
+  year    = {2019},
+  volume  = {69},
+  number  = {10},
+  pages   = {812--822},
+  doi     = {10.1093/biosci/biz094},
+}
+
+@article{domingos2023,
+  author  = {Domingos, Mauro and Nepi, Chiara and Gallo, Luigi and
+             Mariotti, Marco and Peruzzi, Lorenzo},
+  title   = {From Dormant Collections to Repositories for the Study of
+             Habitat Changes: The Importance of Herbaria in Modern Life
+             Sciences},
+  journal = PLANTS,
+  year    = {2023},
+  volume  = {12},
+  number  = {24},
+  pages   = {4163},
+  doi     = {10.3390/plants12244163},
+}
+
+@article{meineke2018,
+  author  = {Meineke, Emily K. and Davis, Charles C. and Davies, T. Jonathan},
+  title   = {The unrealized potential of herbaria for global change biology},
+  journal = ECOMON,
+  year    = {2018},
+  volume  = {88},
+  number  = {4},
+  pages   = {505--525},
+  doi     = {10.1002/ecm.1307},
+}
+
+@article{willis2020,
+  author  = {Willis, Charles G. and Soltis, Pamela S.},
+  title   = {Natural history museums as centers for addressing the
+             biodiversity crisis},
+  journal = PPP,
+  year    = {2020},
+  volume  = {2},
+  number  = {3},
+  pages   = {208--215},
+  doi     = {10.1002/ppp3.10063},
+}
+
+% ============================================================
+%  B. PROTOCOLOS DE PREPARACIÓN Y DIGITALIZACIÓN
+% ============================================================
+
+@article{nelsonEtAl2012,
+  author  = {Nelson, Gil and Paul, Deborah and Riccardi, Greg and
+             Mast, Austin R.},
+  title   = {Five task clusters that enable efficient and effective
+             digitization of biological collections},
+  journal = {ZooKeys},
+  year    = {2012},
+  volume  = {209},
+  pages   = {19--45},
+  doi     = {10.3897/zookeys.209.3135},
+}
+
+@misc{floridaHerbarium,
+  author       = {{University of Florida Herbarium (FLAS)}},
+  title        = {Preparation of Plant Specimens for Deposit as Herbarium
+                  Vouchers},
+  year         = {2020},
+  howpublished = {\url{https://www.floridamuseum.ufl.edu/herbarium/methods/vouchers/}},
+  note         = {Accedido: 2025},
+}
+
+@misc{SetMelu,
+  author       = {{University of Melbourne}},
+  title        = {The University of Melbourne Herbarium Collection Online},
+  year         = {2025},
+  howpublished = {\url{https://online.herbarium.unimelb.edu.au}},
+  note         = {Accedido: julio de 2025},
+}
+
+% ============================================================
+%  C. VISIÓN POR COMPUTADOR Y AUTOMATIZACIÓN EN HERBARIOS
+% ============================================================
+
+@article{waltonEtAl2023,
+  author  = {Walton, Simon and Livermore, Laurence and B{\'a}nki, Olaf and
+             Thompson, Michael J. and others},
+  title   = {Identification of herbarium specimen sheet components from
+             high-resolution images using deep learning},
+  journal = APS,
+  year    = {2023},
+  volume  = {11},
+  number  = {4},
+  pages   = {e11537},
+  doi     = {10.1002/aps3.11537},
+}
+
+@article{weberEtAl2020,
+  author  = {Walker, Benjamin E. and Lehtonen, Samuli and
+             Mackens-Kiani, Torben and others},
+  title   = {Enabling automated herbarium sheet image post-processing using
+             neural network models for color reference chart detection},
+  journal = APS,
+  year    = {2020},
+  volume  = {8},
+  number  = {3},
+  pages   = {e11331},
+  doi     = {10.1002/aps3.11331},
+}
+
+@article{hussein2021,
+  author  = {Hussein, Baidaa Rasheed and Malik, Owais Ahmed and
+             Ong, Wai-Hong and Slik, Johan W. F.},
+  title   = {Automated Extraction of Phenotypic Leaf Traits of Individual
+             Intact Herbarium Leaves from Herbarium Specimen Images Using
+             Deep Learning Based Semantic Segmentation},
+  journal = SENSORS,
+  year    = {2021},
+  volume  = {21},
+  number  = {13},
+  pages   = {4549},
+  doi     = {10.3390/s21134549},
+}
+
+@article{littleEtAl2020,
+  author  = {Little, Damon P. and Tulig, Melissa and Tan, Kiat Chuan and
+             Liu, Yulong and Belongie, Serge and Panesar, Kiran and
+             Ambrose, Barbara and others},
+  title   = {An algorithm competition for automatic species identification
+             from herbarium specimens},
+  journal = APS,
+  year    = {2020},
+  volume  = {8},
+  number  = {6},
+  pages   = {e11365},
+  doi     = {10.1002/aps3.11365},
+}
+
+@article{farrugiaEtAl2022,
+  author  = {Farrugia, Melissa and Vella, Miriam and Vella, Kenneth},
+  title   = {Applications of computer vision and machine learning techniques
+             for digitized herbarium specimens: A systematic literature review},
+  journal = ECO,
+  year    = {2022},
+  volume  = {69},
+  pages   = {101641},
+  doi     = {10.1016/j.ecoinf.2022.101641},
+}
+
+@article{tessler2025,
+  author  = {Tessler, Michael and others},
+  title   = {On herbarium specimen images and artificial intelligence},
+  journal = NPH,
+  year    = {2025},
+  doi     = {10.1111/nph.70312},
+  note    = {Published online July 3, 2025},
+}
+
+@article{dillenEtAl2025,
+  author  = {Dillen, Mathias and others},
+  title   = {{Hespi}: a pipeline for automatically detecting information from
+             herbarium specimen sheets},
+  journal = BIOSCI,
+  year    = {2025},
+  volume  = {75},
+  number  = {8},
+  pages   = {637--650},
+  doi     = {10.1093/bioscience/biae090},
+}
+
+@article{tuiaEtAl2022,
+  author  = {Tuia, Devis and Kellenberger, Benjamin and Beery, Sara and
+             Costelloe, Blair R. and others},
+  title   = {Perspectives in machine learning for wildlife conservation},
+  journal = NATCOM,
+  year    = {2022},
+  volume  = {13},
+  pages   = {792},
+  doi     = {10.1038/s41467-022-27980-y},
+}
+
+% ** NUEVA referencia solicitada **
+@article{guo2025review,
+  author  = {Guo, Yu-Yue and Cai, Haibin and Bramley, Gemma L. C. and
+             Atkins, Hannah J. and Li, Baihua and Theodossiades, Stephanos},
+  title   = {A review of artificial intelligence in herbarium specimen
+             image analysis},
+  journal = AIREV,
+  year    = {2025},
+  volume  = {58},
+  pages   = {402},
+  doi     = {10.1007/s10462-025-11408-2},
+}
+
+% ============================================================
+%  D. VISIÓN POR COMPUTADOR — MÉTODOS GENERALES
+% ============================================================
+
+@book{Goodfellow2016,
+  author    = {Goodfellow, Ian and Bengio, Yoshua and Courville, Aaron},
+  title     = {Deep Learning},
+  publisher = {MIT Press},
+  year      = {2016},
+  isbn      = {978-0262035613},
+  address   = {Cambridge, MA},
+}
+
+@book{Szeliski2010,
+  author    = {Szeliski, Richard},
+  title     = {Computer Vision: Algorithms and Applications},
+  publisher = {Springer},
+  year      = {2010},
+  isbn      = {978-1848829343},
+  address   = {London, UK},
+}
+
+@article{Krizhevsky2012,
+  author  = {Krizhevsky, Alex and Sutskever, Ilya and Hinton, Geoffrey E.},
+  title   = {{ImageNet} Classification with Deep Convolutional Neural Networks},
+  journal = {Advances in Neural Information Processing Systems (NeurIPS)},
+  year    = {2012},
+  pages   = {1097--1105},
+}
+
+@article{He2016,
+  author  = {He, Kaiming and Zhang, Xiangyu and Ren, Shaoqing and Sun, Jian},
+  title   = {Deep Residual Learning for Image Recognition},
+  journal = CVPR,
+  year    = {2016},
+  pages   = {770--778},
+}
+
+@article{Simonyan2014,
+  author  = {Simonyan, Karen and Zisserman, Andrew},
+  title   = {Very Deep Convolutional Networks for Large-Scale Image Recognition},
+  journal = {arXiv preprint arXiv:1409.1556},
+  year    = {2014},
+}
+
+@article{Redmon2016,
+  author  = {Redmon, Joseph and Divvala, Santosh and Girshick, Ross and
+             Farhadi, Ali},
+  title   = {You Only Look Once: Unified, Real-Time Object Detection},
+  journal = CVPR,
+  year    = {2016},
+  pages   = {779--788},
+}
+
+@article{Girshick2015,
+  author  = {Girshick, Ross},
+  title   = {Fast {R-CNN}},
+  journal = ICCV,
+  year    = {2015},
+  pages   = {1440--1448},
+}
+
+@article{Ren2015,
+  author  = {Ren, Shaoqing and He, Kaiming and Girshick, Ross B. and Sun, Jian},
+  title   = {Faster {R-CNN}: Towards Real-Time Object Detection with Region
+             Proposal Networks},
+  journal = IEEE_TPAMI,
+  year    = {2015},
+  volume  = {39},
+  pages   = {1137--1149},
+  doi     = {10.1109/TPAMI.2016.2577031},
+}
+
+@article{Canny1986,
+  author  = {Canny, John},
+  title   = {A Computational Approach to Edge Detection},
+  journal = IEEE_TPAMI,
+  year    = {1986},
+  volume  = {8},
+  pages   = {679--698},
+}
+
+@article{Lowe2004,
+  author  = {Lowe, David},
+  title   = {Distinctive Image Features from Scale-Invariant Keypoints},
+  journal = {International Journal of Computer Vision},
+  year    = {2004},
+  volume  = {60},
+  pages   = {91--110},
+}
+
+@article{Dalal2005,
+  author  = {Dalal, Navneet and Triggs, Bill},
+  title   = {Histograms of Oriented Gradients for Human Detection},
+  journal = CVPR,
+  year    = {2005},
+  pages   = {886--893},
+}
+
+@article{Bay2008,
+  author  = {Bay, Herbert and Ess, Andreas and Tuytelaars, Tinne and
+             {Van Gool}, Luc},
+  title   = {Speeded-Up Robust Features ({SURF})},
+  journal = {Computer Vision and Image Understanding},
+  year    = {2008},
+  volume  = {110},
+  number  = {3},
+  pages   = {346--359},
+  doi     = {10.1016/j.cviu.2007.09.014},
+}
+
+@inproceedings{COCOdataset,
+  author    = {Lin, Tsung-Yi and Maire, Michael and Belongie, Serge and
+               Hays, James and Perona, Pietro and Ramanan, Deva and
+               Doll{\'a}r, Piotr and Zitnick, C. Lawrence},
+  title     = {{Microsoft COCO}: Common Objects in Context},
+  booktitle = {Computer Vision -- ECCV 2014},
+  editor    = {Fleet, David and Pajdla, Tomas and Schiele, Bernt and
+               Tuytelaars, Tinne},
+  publisher = {Springer International Publishing},
+  address   = {Cham},
+  year      = {2014},
+  pages     = {740--755},
+  doi       = {10.1007/978-3-319-10602-1_48},
+}
+
+% ============================================================
+%  E. MÉTRICAS DE EVALUACIÓN
+% ============================================================
+
+@article{everingham2010pascal,
+  author    = {Everingham, Mark and Van Gool, Luc and Williams, Christopher K. I.
+               and Winn, John and Zisserman, Andrew},
+  title     = {The {PASCAL} Visual Object Classes ({VOC}) Challenge},
+  journal   = {International Journal of Computer Vision},
+  year      = {2010},
+  volume    = {88},
+  number    = {2},
+  pages     = {303--338},
+  publisher = {Springer},
+}
+
+@article{powers2020evaluation,
+  author  = {Powers, David M. W.},
+  title   = {Evaluation: From Precision, Recall and {F-Measure} to {ROC},
+             Informedness, Markedness \& Correlation},
+  journal = {Journal of Machine Learning Technologies},
+  year    = {2020},
+  volume  = {2},
+  pages   = {37--63},
+}
+
+% ============================================================
+%  F. APRENDIZAJE FEDERADO (si aplica al trabajo)
+% ============================================================
+
+@inproceedings{mcmahan2017communication,
+  author    = {McMahan, H. Brendan and Moore, Eider and Ramage, Daniel and
+               Hampson, Seth and {Aguera y Arcas}, Blaise},
+  title     = {Communication-Efficient Learning of Deep Networks from
+               Decentralized Data},
+  booktitle = {Proceedings of the 20th International Conference on Artificial
+               Intelligence and Statistics (AISTATS)},
+  year      = {2017},
+  pages     = {1273--1282},
+}
+
+@inproceedings{blanchard2017machine,
+  author    = {Blanchard, Peva and {El Mhamdi}, El Mahdi and Guerraoui, Rachid
+               and Stainer, J{\'e}r{\'e}mie},
+  title     = {Machine Learning with Adversaries: Byzantine Tolerant Gradient
+               Descent},
+  booktitle = {Proceedings of the 31st International Conference on Neural
+               Information Processing Systems (NeurIPS)},
+  year      = {2017},
+  pages     = {119--129},
+}
+
+@inproceedings{yin2018byzantine,
+  author    = {Yin, Dong and Cheng, Yu and Ramchandran, Kannan and
+               Bartlett, Peter},
+  title     = {Byzantine-Robust Distributed Learning: Towards Optimal
+               Statistical Rates},
+  booktitle = {Proceedings of the 35th International Conference on Machine
+               Learning (ICML)},
+  year      = {2018},
+  pages     = {5650--5659},
+}
+
+@inproceedings{reddi2020adaptive,
+  author    = {Reddi, Sashank J. and Charles, Zachary and Zaheer, Manzil and
+               Garrett, Zach and Rush, Keith and Kone{\v{c}}n{\'{y}}, Jakub and
+               Kumar, Sanjiv and McMahan, H. Brendan},
+  title     = {Adaptive Federated Optimization},
+  booktitle = {Proceedings of the 9th International Conference on Learning
+               Representations (ICLR)},
+  year      = {2021},
+}
+
+% ============================================================
+%  G. REFERENCIA DEL LIBRO DE LaTeX
+% ============================================================
+
+@book{DeCastroKorgi2010,
+  author    = {{De Castro Korgi}, Rodrigo},
+  title     = {El Universo {\LaTeX}},
+  edition   = {2nd},
+  publisher = {Universidad Nacional de Colombia},
+  address   = {Bogot\'a D.C.},
+  year      = {2010},
+  isbn      = {958-701-060-4},
+  pages     = {470},
+}

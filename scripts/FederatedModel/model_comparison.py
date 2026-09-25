@@ -136,11 +136,21 @@ def load_yolo_model(
     path = Path(path)
     ckpt = torch.load(path, map_location="cpu", weights_only=False)
 
-    if not _is_bare_state_dict(ckpt):
-        # Full checkpoint — let ultralytics handle it natively.
-        return YOLO(str(path))
+    # Object checkpoints (a dict wrapping an nn.Module, as ultralytics saves) can
+    # crash or silently misbehave when the pickled model was built by a different
+    # torch/ultralytics version. Extract the tensors and rebuild in an env-native
+    # model rather than using the pickled object directly.
+    if isinstance(ckpt, dict) and "model" in ckpt and hasattr(ckpt["model"], "state_dict"):
+        src_names = getattr(ckpt["model"], "names", None)
+        if names is None and isinstance(src_names, dict):
+            names = src_names
+        ckpt = {k: v.clone() for k, v in ckpt["model"].state_dict().items()
+                if not k.endswith("num_batches_tracked")}
 
-    # Bare state_dict path.
+    if not _is_bare_state_dict(ckpt):
+        return YOLO(str(path))   # not a recognized checkpoint dict — let ultralytics try
+
+    # Bare state_dict path (or extracted from an object checkpoint).
     resolved_nc = nc or _infer_nc_from_state_dict(ckpt)
     if resolved_nc is None:
         raise ValueError(
@@ -274,6 +284,7 @@ class FederatedComparison:
             imgsz=self.imgsz,
             batch=self.batch,
             device=self._device(),
+            workers=0,        # avoid macOS multiprocessing dataloader segfaults
             verbose=False,
         )
         metrics = self._extract_per_class(results, local_names)
@@ -764,7 +775,7 @@ def main():
     cmp.run(
         local_model_paths={
             "client1": args.local_unal,
-            "client2": args.local_melu,
+            #"client2": args.local_melu,
         },
         federated_model_path=args.federated,
         keep_temp=args.keep_temp,

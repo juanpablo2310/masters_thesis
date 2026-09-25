@@ -287,7 +287,7 @@ class FederatedServer:
     def make_eval_model(self):
         """Build a fresh (disposable) 17-class model holding the current global
         weights. Used for evaluation so the canonical weights are never fused."""
-        model = build_shared_yolo(self.num_classes, self.class_names)
+        model = build_shared_yolo(self.num_classes, self.class_names, pretrained=None)
         own = model.model.state_dict()
         filtered = {k: v for k, v in self.global_state.items()
                     if k in own and own[k].shape == v.shape}
@@ -318,14 +318,17 @@ class FederatedServer:
         self._save_model()
 
     def _save_model(self):
-        """Save the current global model as a full YOLO checkpoint (loadable directly)."""
+        """Save the global model as a bare state_dict.
+
+        A pickled model object fails to reload across torch/ultralytics versions
+        (weights_only). A plain state_dict always loads and is rebuilt into a
+        17-class model by ``model_comparison.load_yolo_model`` (which infers nc).
+        """
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         save_path = self.model_save_path / f"global_model_round_{self.round}_{timestamp}.pt"
-        model = self.make_eval_model()
-        model.model.names = self.class_names or model.model.names
-        torch.save({"model": model.model, "train_args": {}}, save_path)
+        torch.save({k: v.clone() for k, v in self.global_state.items()}, save_path)
         self.last_save_path = save_path
-        logger.info(f"Saved global model to {save_path}")
+        logger.info(f"Saved global model (state_dict) to {save_path}")
 
     def distribute_model(self, clients: List[FederatedClient]):
         """Push the global weights (params + BN buffers) to every client."""
@@ -352,7 +355,7 @@ class EnhancedFederatedServer(FederatedServer):
     def val_metrics(eval_model, data_yaml: str) -> Dict[str, float]:
         """Validate a (disposable) model on a 17-class YAML and return scalar metrics."""
         try:
-            results = eval_model.val(data=str(data_yaml), verbose=False)
+            results = eval_model.val(data=str(data_yaml), workers=0, batch=4, verbose=False)
             return {
                 'mAP': float(results.box.map),
                 'mAP50': float(results.box.map50),

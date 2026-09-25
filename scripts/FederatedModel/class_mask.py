@@ -267,6 +267,7 @@ def build_global_dataset(
     total_classes: int,
     splits=("train", "val"),
     max_train_images: Optional[int] = None,
+    max_val_images: Optional[int] = None,
     seed: Optional[int] = None,
 ):
     """
@@ -289,12 +290,13 @@ def build_global_dataset(
     names = {i: global_names.get(i, f"class_{i}") for i in range(total_classes)}
     tmp_root = Path(tempfile.mkdtemp(prefix="fedds_"))
 
-    if offset == 0 and max_train_images is None:
+    if offset == 0 and max_train_images is None and max_val_images is None:
         out = {"names": names, "nc": total_classes}
         for split in splits:
             d = cfg.get(split)
             if d:
                 out[split] = str(d)
+        _ensure_train_val_keys(out)
         yaml_path = tmp_root / "global.yaml"
         with open(yaml_path, "w") as f:
             yaml.safe_dump(out, f, sort_keys=False, allow_unicode=True)
@@ -318,8 +320,9 @@ def build_global_dataset(
             continue
 
         imgs = [p for p in img_dir.iterdir() if p.suffix.lower() in IMG_EXTS]
-        if split == "train" and max_train_images and len(imgs) > max_train_images:
-            imgs = rng.sample(imgs, max_train_images)
+        cap = max_train_images if split == "train" else max_val_images
+        if cap and len(imgs) > cap:
+            imgs = rng.sample(imgs, cap)
 
         lbl_dir = Path(str(img_dir).replace("images", "labels"))
         for img in imgs:
@@ -343,10 +346,23 @@ def build_global_dataset(
 
         out[split] = f"{split}/images"
 
+    _ensure_train_val_keys(out)
     yaml_path = tmp_root / "global.yaml"
     with open(yaml_path, "w") as f:
         yaml.safe_dump(out, f, sort_keys=False, allow_unicode=True)
     return yaml_path, tmp_root
+
+
+def _ensure_train_val_keys(out: dict):
+    """Ultralytics 8.4+ requires both 'train' and 'val' in every data YAML.
+
+    When a dataset is built for one split only (e.g. evaluation needs just 'val'),
+    mirror it into the missing key so validation/loading does not error.
+    """
+    if "val" in out and "train" not in out:
+        out["train"] = out["val"]
+    elif "train" in out and "val" not in out:
+        out["val"] = out["train"]
 
 
 def make_label_remap_callback(class_offset: int):

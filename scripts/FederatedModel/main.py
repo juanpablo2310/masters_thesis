@@ -98,14 +98,22 @@ def main():
             metrics_tracker=metrics_tracker,
         )
 
-        # Many short rounds + small local steps keep the shared trunk synchronized
+        # A detector needs thousands of gradient steps. epochs_per_round=1 in warmup
+        # severely undertrains; use real LR (no warmup) and more local epochs/rounds.
         trainer = EnhancedFederatedTrainer(
             server=server,
             clients=clients,
-            rounds=20,
-            epochs_per_round=1,
-            local_images=300,        # random subsample per client per round
-            weighting="equal",       # or "data" to weight by dataset size
+            rounds=10,               # start small & verifiable; raise once it learns
+            epochs_per_round=2,      # ~200 local steps/round at batch=4
+            local_images=400,        # random subsample per client per round
+            imgsz=416,               # low-RAM friendly; <=320 loses small-label detail
+            batch=4,                 # small batch — this Mac is very low on free RAM
+            workers=0,               # no dataloader multiprocessing (RAM/macOS-safe)
+            local_lr=0.01,           # explicit LR; warmup disabled so each round trains
+            warmup_epochs=0.0,
+            weighting="data",        # weight aggregation by dataset size (UNAL 985 vs MELU 3229)
+            eval_every=5,            # global eval every N rounds (costly)
+            eval_images=100,         # cap val images for the convergence proxy
             early_stopping=early_stopping,
             visualization_tools=viz_tools,
         )
